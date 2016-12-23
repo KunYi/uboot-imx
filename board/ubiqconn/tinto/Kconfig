@@ -1,0 +1,15 @@
+if TARGET_MX6TINTO
+
+config SYS_BOARD
+	default "tinto"
+
+config SYS_VENDOR
+	default "ubiqconn"
+
+config SYS_SOC
+	default "mx6"
+
+config SYS_CONFIG_NAME
+	default "tinto"
+
+endif

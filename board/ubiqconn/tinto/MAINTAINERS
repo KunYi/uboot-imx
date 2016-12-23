@@ -1,0 +1,7 @@
+MX6TINTO BOARD
+M:	KunYi Chen <kunnyi_chen@ubiqconn.com>
+S:	Maintained
+F:	board/freescale/mx6tinto/
+F:	include/configs/mx6tinto.h
+F:	configs/mx6dltinto_2gb_defconfig
+F:	configs/mx6solotinto_defconfig
