@@ -1,0 +1,15 @@
+if TARGET_MX6BOBO9
+
+config SYS_BOARD
+	default "bobo9"
+
+config SYS_VENDOR
+	default "ubiqconn"
+
+config SYS_SOC
+	default "mx6"
+
+config SYS_CONFIG_NAME
+	default "bobo9"
+
+endif

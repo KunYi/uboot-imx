@@ -216,6 +216,11 @@ config TARGET_MX6TINTO
 	select DM
 	select DM_THERMAL
 
+config TARGET_MX6BOBO9
+	bool "Support Navico Bobo 9"
+	select DM
+	select DM_THERMAL
+
 endchoice
 
 config SYS_SOC
@@ -253,5 +258,6 @@ source "board/udoo/Kconfig"
 source "board/wandboard/Kconfig"
 source "board/warp/Kconfig"
 source "board/ubiqconn/tinto/Kconfig"
+source "board/ubiqconn/bobo9/Kconfig"
 
 endif

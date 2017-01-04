@@ -1,0 +1,6 @@
+MX6TINTO BOARD
+M:	KunYi Chen <kunnyi_chen@ubiqconn.com>
+S:	Maintained
+F:	board/ubiqconn/bobo9/
+F:	include/configs/bobo9.h
+F:	configs/bobo9_defconfig
