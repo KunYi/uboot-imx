@@ -69,7 +69,7 @@ DECLARE_GLOBAL_DATA_PTR;
 	PAD_CTL_SPEED_MED | PAD_CTL_DSE_40ohm |			\
 	PAD_CTL_HYS | PAD_CTL_SRE_SLOW)
 
-#define I2C_PMIC	1
+#define I2C_PMIC	2
 
 #define I2C_PAD MUX_PAD_CTRL(I2C_PAD_CTRL)
 
@@ -314,14 +314,14 @@ static iomux_v3_cfg_t const rgb_pads[] = {
 
 static struct i2c_pads_info i2c_pad_info1 = {
 	.scl = {
-		.i2c_mode = MX6_PAD_KEY_COL3__I2C2_SCL | I2C_PAD,
-		.gpio_mode = MX6_PAD_KEY_COL3__GPIO4_IO12 | I2C_PAD,
-		.gp = IMX_GPIO_NR(4, 12)
+		.i2c_mode = MX6_PAD_GPIO_3__I2C3_SCL | I2C_PAD,
+		.gpio_mode = MX6_PAD_GPIO_3__GPIO1_IO03 | I2C_PAD,
+		.gp = IMX_GPIO_NR(1, 3)
 	},
 	.sda = {
-		.i2c_mode = MX6_PAD_KEY_ROW3__I2C2_SDA | I2C_PAD,
-		.gpio_mode = MX6_PAD_KEY_ROW3__GPIO4_IO13 | I2C_PAD,
-		.gp = IMX_GPIO_NR(4, 13)
+		.i2c_mode = MX6_PAD_GPIO_6__I2C3_SDA | I2C_PAD,
+		.gpio_mode = MX6_PAD_GPIO_6__GPIO1_IO06 | I2C_PAD,
+		.gp = IMX_GPIO_NR(1, 6)
 	}
 };
 
@@ -956,7 +956,7 @@ int board_late_init(void)
 
 int checkboard(void)
 {
-	puts("Board: MX6-Tinto\n");
+	puts("Board: MX6-Bobo9\n");
 	return 0;
 }
 
