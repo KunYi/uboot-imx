@@ -52,6 +52,7 @@ struct pmic *pfuze_common_init(unsigned char i2cbus)
 {
 	struct pmic *p;
 	int ret;
+	u32 id ;
 	unsigned int reg;
 
 	ret = power_pfuze100_init(i2cbus);
@@ -64,8 +65,9 @@ struct pmic *pfuze_common_init(unsigned char i2cbus)
 		return NULL;
 
 	pmic_reg_read(p, PFUZE100_DEVICEID, &reg);
+	id = reg & 0xf;
 	printf("PMIC:  PFUZE%s ID=0x%02x\n",
-		((reg & 0xf) == 0 ) ? "100" : "200",
+		(id == 0 ) ? "100" : "200",
 		reg);
 
 	/* Set SW1AB stanby volage to 0.975V */
@@ -80,18 +82,19 @@ struct pmic *pfuze_common_init(unsigned char i2cbus)
 	reg |= SW1xCONF_DVSSPEED_4US;
 	pmic_reg_write(p, PFUZE100_SW1ABCONF, reg);
 
-	/* Set SW1C standby voltage to 0.975V */
-	pmic_reg_read(p, PFUZE100_SW1CSTBY, &reg);
-	reg &= ~SW1x_STBY_MASK;
-	reg |= SW1x_0_975V;
-	pmic_reg_write(p, PFUZE100_SW1CSTBY, reg);
+	if (id == 0) {
+		/* Set SW1C standby voltage to 0.975V */
+		pmic_reg_read(p, PFUZE100_SW1CSTBY, &reg);
+		reg &= ~SW1x_STBY_MASK;
+		reg |= SW1x_0_975V;
+		pmic_reg_write(p, PFUZE100_SW1CSTBY, reg);
 
-	/* Set SW1C/VDDSOC step ramp up time from 16us to 4us/25mV */
-	pmic_reg_read(p, PFUZE100_SW1CCONF, &reg);
-	reg &= ~SW1xCONF_DVSSPEED_MASK;
-	reg |= SW1xCONF_DVSSPEED_4US;
-	pmic_reg_write(p, PFUZE100_SW1CCONF, reg);
-
+		/* Set SW1C/VDDSOC step ramp up time from 16us to 4us/25mV */
+		pmic_reg_read(p, PFUZE100_SW1CCONF, &reg);
+		reg &= ~SW1xCONF_DVSSPEED_MASK;
+		reg |= SW1xCONF_DVSSPEED_4US;
+		pmic_reg_write(p, PFUZE100_SW1CCONF, reg);
+	}
 	return p;
 }
 #endif
