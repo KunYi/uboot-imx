@@ -26,15 +26,18 @@
 #endif
 
 #define CONFIG_MACH_TYPE	3980
+#define CONFIG_BOOTDELAY	2
+
+#define DEBUG_UART 2
+#if (DEBUG_UART == 1)
 #define CONFIG_MXC_UART_BASE	UART1_BASE
-#define CONFIG_CONSOLE_DEV		"ttymxc0"
-#define BOOT_DEV 0 /* 1: boot from T-Flash, 0:boot from EMMC */
-#if (BOOT_DEV==1)
-#define CONFIG_MMCROOT			"/dev/mmcblk2p2"  /* T-FLASH Slot */
-#else
-#define CONFIG_MMCROOT			"/dev/mmcblk3p2"  /* builtin EMMC */
+#define CONFIG_CONSOLE_DEV	"ttymxc0"
+#elif (DEBUG_UART == 2)
+#define CONFIG_MXC_UART_BASE	UART5_BASE
+#define CONFIG_CONSOLE_DEV	"ttymxc1"
 #endif
 
+#define CONFIG_MMCROOT		"/dev/mmcblk0p2"
 #define CONFIG_DEFAULT_FDT_FILE	"imx6dl-bobo9.dtb"
 #define PHYS_SDRAM_SIZE		(512u * 1024 * 1024)
 
@@ -57,7 +60,6 @@
 #define CONFIG_BOARD_EARLY_INIT_F
 #define CONFIG_BOARD_LATE_INIT
 #define CONFIG_MXC_GPIO
-
 #define CONFIG_MXC_UART
 
 #define CONFIG_CMD_FUSE
@@ -79,10 +81,9 @@
 #define CONFIG_CMD_EXT4_WRITE
 #define CONFIG_CMD_FAT
 #define CONFIG_DOS_PARTITION
-
 #define CONFIG_SUPPORT_EMMC_BOOT /* eMMC specific */
 
-/* allow to overwrite serial and ethaddr */
+/* allow to overwrite serial configuration*/
 #define CONFIG_ENV_OVERWRITE
 #define CONFIG_CONS_INDEX              1
 #define CONFIG_BAUDRATE                        115200
@@ -491,12 +492,8 @@
 #include "mx6tintoandroid_common.h"
 #endif
 
-#define CONFIG_SYS_FSL_USDHC_NUM	3
-#if (BOOT_DEV==1)
+#define CONFIG_SYS_FSL_USDHC_NUM	1
 #define CONFIG_SYS_MMC_ENV_DEV		1	/* T-FLASH Slot */
-#else
-#define CONFIG_SYS_MMC_ENV_DEV		2	/* builtin EMMC */
-#endif
 #define CONFIG_SYS_MMC_ENV_PART         0       /* user partition */
 
 /*
