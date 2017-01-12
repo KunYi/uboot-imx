@@ -221,6 +221,54 @@ static iomux_v3_cfg_t const rgb_pads[] = {
 	MX6_PAD_CSI0_DAT7__GPIO5_IO25	| MUX_PAD_CTRL(NO_PAD_CTRL),	/* BACKLIGHT_EN_B */
 };
 
+/* NAND */
+static iomux_v3_cfg_t const nandfc_pads[] = {
+	MX6_PAD_NANDF_CLE__NAND_CLE     | MUX_PAD_CTRL(NO_PAD_CTRL),
+	MX6_PAD_NANDF_ALE__NAND_ALE     | MUX_PAD_CTRL(NO_PAD_CTRL),
+	MX6_PAD_NANDF_WP_B__NAND_WP_B   | MUX_PAD_CTRL(NO_PAD_CTRL),
+	MX6_PAD_NANDF_RB0__NAND_READY_B | MUX_PAD_CTRL(NO_PAD_CTRL),
+	MX6_PAD_NANDF_CS0__NAND_CE0_B   | MUX_PAD_CTRL(NO_PAD_CTRL),
+	MX6_PAD_SD4_CMD__NAND_RE_B      | MUX_PAD_CTRL(NO_PAD_CTRL),
+	MX6_PAD_SD4_CLK__NAND_WE_B      | MUX_PAD_CTRL(NO_PAD_CTRL),
+	MX6_PAD_NANDF_D0__NAND_DATA00   | MUX_PAD_CTRL(NO_PAD_CTRL),
+	MX6_PAD_NANDF_D1__NAND_DATA01   | MUX_PAD_CTRL(NO_PAD_CTRL),
+	MX6_PAD_NANDF_D2__NAND_DATA02   | MUX_PAD_CTRL(NO_PAD_CTRL),
+	MX6_PAD_NANDF_D3__NAND_DATA03   | MUX_PAD_CTRL(NO_PAD_CTRL),
+	MX6_PAD_NANDF_D4__NAND_DATA04   | MUX_PAD_CTRL(NO_PAD_CTRL),
+	MX6_PAD_NANDF_D5__NAND_DATA05   | MUX_PAD_CTRL(NO_PAD_CTRL),
+	MX6_PAD_NANDF_D6__NAND_DATA06   | MUX_PAD_CTRL(NO_PAD_CTRL),
+};
+
+#ifdef CONFIG_CMD_NAND
+static void setup_gpmi_nand(void)
+{
+	struct mxc_ccm_reg *mxc_ccm = (struct mxc_ccm_reg *)CCM_BASE_ADDR;
+
+	/* config gpmi nand iomux */
+	imx_iomux_v3_setup_multiple_pads(nandfc_pads, ARRAY_SIZE(nandfc_pads));
+
+	/* config gpmi and bch clock to 100 MHz */
+	clrsetbits_le32(&mxc_ccm->cs2cdr,
+			MXC_CCM_CS2CDR_ENFC_CLK_PODF_MASK |
+			MXC_CCM_CS2CDR_ENFC_CLK_PRED_MASK |
+			MXC_CCM_CS2CDR_ENFC_CLK_SEL_MASK,
+			MXC_CCM_CS2CDR_ENFC_CLK_PODF(0) |
+			MXC_CCM_CS2CDR_ENFC_CLK_PRED(3) |
+			MXC_CCM_CS2CDR_ENFC_CLK_SEL(3));
+
+	/* enable gpmi and bch clock gating */
+	setbits_le32(&mxc_ccm->CCGR4,
+			MXC_CCM_CCGR4_RAWNAND_U_BCH_INPUT_APB_MASK |
+			MXC_CCM_CCGR4_RAWNAND_U_GPMI_BCH_INPUT_BCH_MASK |
+			MXC_CCM_CCGR4_RAWNAND_U_GPMI_BCH_INPUT_GPMI_IO_MASK |
+			MXC_CCM_CCGR4_RAWNAND_U_GPMI_INPUT_APB_MASK |
+			MXC_CCM_CCGR4_PL301_MX6QPER1_BCH_OFFSET);
+
+	/* enable apbh clock gating */
+	setbits_le32(&mxc_ccm->CCGR0, MXC_CCM_CCGR0_APBHDMA_MASK);
+}
+#endif
+
 static struct i2c_pads_info i2c_pad_info1 = {
 	.scl = {
 		.i2c_mode = MX6_PAD_GPIO_3__I2C3_SCL | I2C_PAD,
@@ -544,6 +592,9 @@ int board_init(void)
 	gd->bd->bi_boot_params = PHYS_SDRAM + 0x100;
 
 	setup_i2c(1, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info1);
+#ifdef CONFIG_CMD_NAND
+	setup_gpmi_nand();
+#endif
 
 #ifdef CONFIG_USB_EHCI_MX6
 	setup_usb();
