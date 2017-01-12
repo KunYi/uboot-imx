@@ -48,7 +48,6 @@
 #define CONFIG_DISPLAY_CPUINFO
 #define CONFIG_DISPLAY_BOARDINFO
 
-
 #define CONFIG_CMDLINE_TAG
 #define CONFIG_SETUP_MEMORY_TAGS
 #define CONFIG_INITRD_TAG
@@ -122,7 +121,7 @@
 
 #ifdef CONFIG_SUPPORT_EMMC_BOOT
 #define EMMC_ENV \
-	"emmcdev=2\0" \
+	"emmcdev=1\0" \
 	"update_emmc_firmware=" \
 		"if test ${ip_dyn} = yes; then " \
 			"setenv get_cmd dhcp; " \
@@ -416,7 +415,7 @@
 #endif
 
 #define CONFIG_SYS_FSL_USDHC_NUM	1
-#define CONFIG_SYS_MMC_ENV_DEV		1	/* T-FLASH Slot */
+#define CONFIG_SYS_MMC_ENV_DEV		0	/* T-FLASH Slot */
 #define CONFIG_SYS_MMC_ENV_PART         0       /* user partition */
 
 /* PMIC */
