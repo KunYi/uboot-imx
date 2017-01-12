@@ -70,7 +70,14 @@ DECLARE_GLOBAL_DATA_PTR;
 
 #define I2C_PAD MUX_PAD_CTRL(I2C_PAD_CTRL)
 
-#define DISP0_PWR_EN	IMX_GPIO_NR(1, 21)
+#define LCD_PWR_EN	IMX_GPIO_NR(3, 5)
+#define LCD_RESET	IMX_GPIO_NR(2, 16)
+#define BL_EN		IMX_GPIO_NR(5, 25)
+
+#define PWM_LCD_CNTRST	0	/* PWM1 */
+#define PWM_BACKLIGHT	3	/* PWM4	*/
+#define PWM_AUDIO	2	/* PWM3 */
+
 #define PWR_HOLDON	IMX_GPIO_NR(1, 7)
 #define WIFI_EN		IMX_GPIO_NR(5, 26)
 #define BT_EN		IMX_GPIO_NR(5, 24)
@@ -141,10 +148,6 @@ static iomux_v3_cfg_t const touch_pads[] = {
 	MX6_PAD_EIM_A20__GPIO2_IO18	| MUX_PAD_CTRL(NO_PAD_CTRL),	/* TOUCH_EN */
 };
 
-static iomux_v3_cfg_t const backlight_pads[] = {
-	MX6_PAD_SD4_DAT2__PWM4_OUT	| MUX_PAD_CTRL(NO_PAD_CTRL),	/* LCD_BACKLIGHT-DIM_PWM */
-};
-
 static iomux_v3_cfg_t const audio_pads[] = {
 	MX6_PAD_SD4_DAT1__PWM3_OUT	| MUX_PAD_CTRL(NO_PAD_CTRL),	/* AUDIO_PWM */
 };
@@ -211,9 +214,11 @@ static iomux_v3_cfg_t const rgb_pads[] = {
 	MX6_PAD_DISP0_DAT15__IPU1_DISP0_DATA15 | MUX_PAD_CTRL(NO_PAD_CTRL),
 	MX6_PAD_DISP0_DAT16__IPU1_DISP0_DATA16 | MUX_PAD_CTRL(NO_PAD_CTRL),
 	MX6_PAD_DISP0_DAT17__IPU1_DISP0_DATA17 | MUX_PAD_CTRL(NO_PAD_CTRL),
-	MX6_PAD_EIM_DA5__GPIO3_IO05 | MUX_PAD_CTRL(NO_PAD_CTRL),	/* LCD_PWR_EN */
-	MX6_PAD_EIM_A22__GPIO2_IO16 | MUX_PAD_CTRL(NO_PAD_CTRL),	/* LCD_RESET */
-	MX6_PAD_GPIO_9__PWM1_OUT | MUX_PAD_CTRL(NO_PAD_CTRL),		/* LCD_CNTRST_PWM */
+	MX6_PAD_EIM_DA5__GPIO3_IO05	| MUX_PAD_CTRL(NO_PAD_CTRL),	/* LCD_PWR_EN */
+	MX6_PAD_EIM_A22__GPIO2_IO16	| MUX_PAD_CTRL(NO_PAD_CTRL),	/* LCD_RESET */
+	MX6_PAD_GPIO_9__PWM1_OUT	| MUX_PAD_CTRL(NO_PAD_CTRL),	/* LCD_CNTRST_PWM */
+	MX6_PAD_SD4_DAT2__PWM4_OUT	| MUX_PAD_CTRL(NO_PAD_CTRL),	/* LCD_BACKLIGHT-DIM_PWM */
+	MX6_PAD_CSI0_DAT7__GPIO5_IO25	| MUX_PAD_CTRL(NO_PAD_CTRL),	/* BACKLIGHT_EN_B */
 };
 
 static struct i2c_pads_info i2c_pad_info1 = {
@@ -347,6 +352,36 @@ void board_late_mmc_env_init(void)
 static void enable_rgb(struct display_info_t const *dev)
 {
 	imx_iomux_v3_setup_multiple_pads(rgb_pads, ARRAY_SIZE(rgb_pads));
+
+	/* turn on lcd */
+	gpio_direction_output(LCD_RESET, 0);
+	/* PWM1 for output contrast */
+	if (pwm_init(PWM_LCD_CNTRST, 0, 0))
+		goto error;
+	/* duty cycle: 500ns, period: 3000ns */
+	if (pwm_config(PWM_LCD_CNTRST, 5000, 300000))
+		goto error;
+	if (pwm_enable(PWM_LCD_CNTRST))
+		goto error;
+
+	gpio_direction_output(LCD_PWR_EN, 1);
+
+	// turn on backlight
+	/* PWM3 for brightness control */
+	if (pwm_init(PWM_BACKLIGHT, 0, 0))
+		goto error;
+	/* duty: period: 3000ns */
+	if (pwm_config(PWM_BACKLIGHT, 20000, 300000))
+		goto error;
+	if (pwm_enable(PWM_BACKLIGHT))
+		goto error;
+
+	/* release LCD reset */
+	gpio_set_value(LCD_RESET, 1);
+	gpio_direction_output(BL_EN, 0);
+	return;
+error:
+	printf("enabled LCD failed\n");
 }
 
 struct display_info_t const displays[] = {{
@@ -378,7 +413,6 @@ static void setup_display(void)
 	struct mxc_ccm_reg *mxc_ccm = (struct mxc_ccm_reg *)CCM_BASE_ADDR;
 	struct iomuxc *iomux = (struct iomuxc *)IOMUXC_BASE_ADDR;
 	int reg;
-
 
 	imx_iomux_v3_setup_multiple_pads(di0_pads, ARRAY_SIZE(di0_pads));
 
@@ -426,7 +460,6 @@ static void setup_display(void)
 	       << IOMUXC_GPR3_LVDS1_MUX_CTL_OFFSET);
 	writel(reg, &iomux->gpr[3]);
 
-	// backligt off
 }
 #endif /* CONFIG_VIDEO_IPUV3 */
 
