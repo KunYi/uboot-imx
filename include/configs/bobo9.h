@@ -71,7 +71,7 @@
 /* MMC Configs */
 #define CONFIG_FSL_ESDHC
 #define CONFIG_FSL_USDHC
-#define CONFIG_SYS_FSL_ESDHC_ADDR      0
+#define CONFIG_SYS_FSL_ESDHC_ADDR      USDHC1_BASE_ADDR
 
 #define CONFIG_MMC
 #define CONFIG_CMD_MMC

@@ -46,8 +46,8 @@ DECLARE_GLOBAL_DATA_PTR;
 	PAD_CTL_SPEED_MED | PAD_CTL_DSE_40ohm |			\
 	PAD_CTL_SRE_FAST  | PAD_CTL_HYS)
 
-#define USDHC_PAD_CTRL (PAD_CTL_PUS_47K_UP |			\
-	PAD_CTL_SPEED_LOW | PAD_CTL_DSE_80ohm |			\
+#define USDHC_PAD_CTRL (PAD_CTL_PUS_100K_UP |			\
+	PAD_CTL_SPEED_LOW | PAD_CTL_DSE_48ohm |			\
 	PAD_CTL_SRE_FAST  | PAD_CTL_HYS)
 
 #define I2C_PAD_CTRL  (PAD_CTL_PUS_100K_UP |			\
@@ -143,6 +143,9 @@ static iomux_v3_cfg_t const usdhc1_pads[] = {
 	MX6_PAD_SD4_DAT4__GPIO2_IO12	| MUX_PAD_CTRL(NO_PAD_CTRL),	/* EN */
 	MX6_PAD_EIM_D16__GPIO3_IO16	| MUX_PAD_CTRL(NO_PAD_CTRL),	/* SD_FAULT */
 };
+#define USDHC1_EN	IMX_GPIO_NR(2, 12)
+#define USDHC1_CD	IMX_GPIO_NR(2, 8)
+#define USDHC1_FAULT	IMX_GPIO_NR(3, 16)
 
 static iomux_v3_cfg_t const touch_pads[] = {
 	MX6_PAD_EIM_A20__GPIO2_IO18	| MUX_PAD_CTRL(NO_PAD_CTRL),	/* TOUCH_EN */
@@ -169,11 +172,6 @@ static iomux_v3_cfg_t const wl18xx_pads[] = {
 	/* Enabled Control */
 	MX6_PAD_CSI0_DAT8__GPIO5_IO26	| MUX_PAD_CTRL(NO_PAD_CTRL),	/* WIFI_EN */
 	MX6_PAD_CSI0_DAT6__GPIO5_IO24	| MUX_PAD_CTRL(NO_PAD_CTRL),	/* BLUETOOTH_EN */
-};
-
-static iomux_v3_cfg_t const nand_pads[] = {
-	MX6_PAD_SD4_CLK__NAND_WE_B	| MUX_PAD_CTRL(NO_PAD_CTRL),	/* NAND WR */
-	MX6_PAD_SD4_CMD__NAND_RE_B	| MUX_PAD_CTRL(NO_PAD_CTRL),	/* NAND RD */
 };
 
 static iomux_v3_cfg_t const sonar_pads[] = {
@@ -322,7 +320,6 @@ int mmc_map_to_kernel_blk(int dev_no)
 	return dev_no + 1;
 }
 
-#define USDHC1_CD_GPIO	IMX_GPIO_NR(2, 8)
 int board_mmc_getcd(struct mmc *mmc)
 {
 	struct fsl_esdhc_cfg *cfg = (struct fsl_esdhc_cfg *)mmc->priv;
@@ -330,7 +327,7 @@ int board_mmc_getcd(struct mmc *mmc)
 
 	switch (cfg->esdhc_base) {
 	case USDHC1_BASE_ADDR:
-		ret = !gpio_get_value(USDHC1_CD_GPIO);
+		ret = !gpio_get_value(USDHC1_CD);
 		break;
 	default:
 		printf("error USDHC base\n");
@@ -351,8 +348,11 @@ int board_mmc_init(bd_t *bis)
 	 */
 	imx_iomux_v3_setup_multiple_pads(
 	usdhc1_pads, ARRAY_SIZE(usdhc1_pads));
-	gpio_direction_input(USDHC1_CD_GPIO);
+	gpio_direction_output(USDHC1_EN, 1);
+	gpio_direction_input(USDHC1_CD);
+	gpio_direction_input(USDHC1_FAULT);
 	usdhc_cfg[0].sdhc_clk = mxc_get_clock(MXC_ESDHC_CLK);
+	usdhc_cfg[0].max_bus_width = 4;
 	ret = fsl_esdhc_initialize(bis, &usdhc_cfg[0]);
 	if (ret)
 		return ret;
