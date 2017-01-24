@@ -212,7 +212,7 @@
 		"fi\0" \
 	EMMC_ENV	  \
 	"smp=" CONFIG_SYS_NOSMP "\0"\
-	"videoargs=mxcfb0:dev=ldb,if=RGB24\0" \
+	"videoargs=mxcfb0:dev=lcd,if=RGB666\0" \
 	"mmcargs=setenv bootargs console=${console},${baudrate} ${smp} " \
 		"root=${mmcroot} video=${videoargs}\0" \
 	"usbargs=setenv bootargs console=${console},${baudrate} ${smp} " \
