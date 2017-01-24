@@ -36,7 +36,7 @@
 #define CONFIG_CONSOLE_DEV	"ttymxc0"
 #elif (DEBUG_UART == 2)
 #define CONFIG_MXC_UART_BASE	UART5_BASE
-#define CONFIG_CONSOLE_DEV	"ttymxc1"
+#define CONFIG_CONSOLE_DEV	"ttymxc2"
 #endif
 
 #define CONFIG_MMCROOT		"/dev/mmcblk0p2"
