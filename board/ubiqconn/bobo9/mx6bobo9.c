@@ -681,8 +681,13 @@ void ldo_mode_set(int ldo_bypass)
 		printf("No PMIC found!\n");
 		return;
 	}
-	return;
 
+	/* the board not support LDO bypass mode */
+	if (ldo_bypass) {
+		printf("Warring!! PFUZE0200 should be not support ldo bypass mode!\n");
+		printf("please make sure about gpc/regulator in device tree\n");
+		ldo_bypass = 0;
+	}
 	/* increase VDDARM/VDDSOC to support 1.2G chip */
 	if (check_1_2G()) {
 		ldo_bypass = 0;	/* ldo_enable on 1.2G chip */
