@@ -439,6 +439,16 @@ error:
 	printf("enabled LCD failed\n");
 }
 
+/*
+ * the below defined in drivers/video/mxcfb.h
+ */
+#define FB_SYNC_OE_LOW_ACT	(0x80000000)
+#define FB_SYNC_CLK_LAT_FALL	(0x40000000)
+#define FB_SYNC_DATA_INVERT	(0x20000000)
+#define FB_SYNC_CLK_IDLE_EN	(0x10000000)
+#define FB_SYNC_SHARP_MODE	(0x08000000)
+#define FB_SYNC_SWAP_RGB	(0x04000000)
+
 struct display_info_t const displays[] = {{
 	.bus	= -1,
 	.addr	= 0,
@@ -457,7 +467,7 @@ struct display_info_t const displays[] = {{
 		.lower_margin   = 22,
 		.hsync_len      = 40,
 		.vsync_len      = 20,
-		.sync           = FB_SYNC_EXT,
+		.sync           = FB_SYNC_EXT | FB_SYNC_DATA_INVERT,
 		.vmode          = FB_VMODE_NONINTERLACED
 } } };
 
