@@ -27,7 +27,7 @@
 
 #define CONFIG_MACH_TYPE	3980
 #define CONFIG_BOOTDELAY	2
-
+#define CONFIG_VIDEO_ARGS       "mxcfb0:dev=lcd,CTP-WVGA,if=RGB666,bpp=16 fbmem=10M"
 #define CONFIG_SYS_USE_NAND
 
 #define DEBUG_UART 2
@@ -212,7 +212,7 @@
 		"fi\0" \
 	EMMC_ENV	  \
 	"smp=" CONFIG_SYS_NOSMP "\0"\
-	"videoargs=mxcfb0:dev=lcd,if=RGB666\0" \
+	"videoargs=" CONFIG_VIDEO_ARGS "\0" \
 	"mmcargs=setenv bootargs console=${console},${baudrate} ${smp} " \
 		"root=${mmcroot} video=${videoargs}\0" \
 	"usbargs=setenv bootargs console=${console},${baudrate} ${smp} " \
