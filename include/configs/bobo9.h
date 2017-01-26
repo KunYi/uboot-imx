@@ -27,7 +27,7 @@
 
 #define CONFIG_MACH_TYPE	3980
 #define CONFIG_BOOTDELAY	2
-#define CONFIG_VIDEO_ARGS       "mxcfb0:dev=lcd,CTP-WVGA,if=RGB666,bpp=16 fbmem=10M"
+#define CONFIG_VIDEO_ARGS       "mxcfb0:dev=lcd "
 #define CONFIG_SYS_USE_NAND
 
 #define DEBUG_UART 2
