@@ -439,6 +439,24 @@ error:
 	printf("enabled LCD failed\n");
 }
 
+static void enable_lvds(struct display_info_t const *dev)
+{
+	struct iomuxc *iomux = (struct iomuxc *)IOMUXC_BASE_ADDR;
+	u32	reg = readl(&iomux->gpr[2]);
+
+	reg = IOMUXC_GPR2_BGREF_RRMODE_EXTERNAL_RES
+	     | IOMUXC_GPR2_DI1_VS_POLARITY_ACTIVE_HIGH
+	     | IOMUXC_GPR2_DI0_VS_POLARITY_ACTIVE_HIGH
+	     | IOMUXC_GPR2_BIT_MAPPING_CH1_SPWG
+	     | IOMUXC_GPR2_DATA_WIDTH_CH1_24BIT
+	     | IOMUXC_GPR2_BIT_MAPPING_CH0_SPWG
+	     | IOMUXC_GPR2_DATA_WIDTH_CH0_24BIT
+	     | IOMUXC_GPR2_LVDS_CH0_MODE_ENABLED_DI0
+	     | IOMUXC_GPR2_LVDS_CH1_MODE_DISABLED;
+	writel(reg, &iomux->gpr[2]);
+
+}
+
 /*
  * the below defined in drivers/video/mxcfb.h
  */
@@ -448,7 +466,14 @@ error:
 #define FB_SYNC_CLK_IDLE_EN	(0x10000000)
 #define FB_SYNC_SHARP_MODE	(0x08000000)
 #define FB_SYNC_SWAP_RGB	(0x04000000)
-
+/*
+ *  LCD Modules
+ *  select by panel env. variable, details in arch/arm/imx-common/video.c
+ *	setenv("panel", "CTP-WVGA") or
+ *	setenv("panel", "CTP-WXGA")
+ *  CTP-WVGA for BoBo9
+ *  CTO-WXGA for Bobo12
+ */
 struct display_info_t const displays[] = {{
 	.bus	= -1,
 	.addr	= 0,
@@ -461,14 +486,34 @@ struct display_info_t const displays[] = {{
 		.xres           = 800,
 		.yres           = 480,
 		.pixclock       = 30000, /* ~ 33MHz */
-		.left_margin    = 210,
-		.right_margin   = 46,
-		.upper_margin   = 23,
-		.lower_margin   = 22,
-		.hsync_len      = 40,
-		.vsync_len      = 20,
+		.left_margin    = 46,  /* HBP */
+		.right_margin   = 208, /* HFP */
+		.upper_margin   = 23,  /* VBP */
+		.lower_margin   = 20,  /* VFP */
+		.hsync_len      = 2,
+		.vsync_len      = 2,
 		.sync           = FB_SYNC_EXT | FB_SYNC_DATA_INVERT,
 		.vmode          = FB_VMODE_NONINTERLACED
+	}}, {
+	.bus	= -1,
+	.addr	= 0,
+	.pixfmt = IPU_PIX_FMT_RGB24,
+	.detect = NULL,
+	.enable = enable_lvds,
+	.mode = {
+		.name = "CTP-WXGA",
+		.refresh        = 60,
+		.xres           = 1280,
+		.yres           = 800,
+		.pixclock       = 14065, /* ~ 71.1MHz */
+		.left_margin    = 210, /* HBP, Horizontal Back porch */
+		.right_margin   = 46,  /* HFP, Horizontal Front Porch */
+		.upper_margin   = 23,  /* VBP, Vertical Back Porch */
+		.lower_margin   = 22,  /* VFP, Vertical Front Porch */
+		.hsync_len      = 40,  /* HSPW, Horizontal Sync Pulse Width */
+		.vsync_len	= 20,  /* VSPW, Vertical Sync Pulse Width  */
+		.sync		= FB_SYNC_EXT,
+		.vmode		= FB_VMODE_NONINTERLACED
 } } };
 
 size_t display_count = ARRAY_SIZE(displays);
