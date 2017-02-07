@@ -492,7 +492,7 @@ struct display_info_t const displays[] = {{
 		.lower_margin   = 20,  /* VFP */
 		.hsync_len      = 2,
 		.vsync_len      = 2,
-		.sync           = FB_SYNC_EXT | FB_SYNC_DATA_INVERT,
+		.sync           = FB_SYNC_EXT | FB_SYNC_DATA_INVERT | FB_SYNC_CLK_LAT_FALL,
 		.vmode          = FB_VMODE_NONINTERLACED
 	}}, {
 	.bus	= -1,
