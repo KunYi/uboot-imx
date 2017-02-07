@@ -88,6 +88,18 @@ DECLARE_GLOBAL_DATA_PTR;
 #define WIFI_EN		IMX_GPIO_NR(5, 26)
 #define BT_EN		IMX_GPIO_NR(5, 24)
 
+#define FAMILY_CFG3	IMX_GPIO_NR(2, 11)
+#define FAMILY_CFG2	IMX_GPIO_NR(3, 24)
+#define FAMILY_CFG1	IMX_GPIO_NR(3, 26)
+#define FAMILY_CFG0	IMX_GPIO_NR(5, 28)
+#define MODEL_ID1	IMX_GPIO_NR(5, 22)
+#define MODEL_ID0	IMX_GPIO_NR(5, 20)
+
+enum { ID_BOBO9 = 1,
+       ID_BOBO12 = 2,
+       ID_UNKNOW
+};
+
 int dram_init(void)
 {
 	gd->ram_size = imx_ddr_size();
@@ -291,6 +303,31 @@ static void setup_board_version(void)
 {
 	imx_iomux_v3_setup_multiple_pads(hwId_pads, ARRAY_SIZE(hwId_pads));
 	imx_iomux_v3_setup_multiple_pads(boardId_pads, ARRAY_SIZE(boardId_pads));
+	gpio_direction_input(FAMILY_CFG3);
+	gpio_direction_input(FAMILY_CFG2);
+	gpio_direction_input(FAMILY_CFG1);
+	gpio_direction_input(FAMILY_CFG0);
+	gpio_direction_input(MODEL_ID1);
+	gpio_direction_input(MODEL_ID0);
+}
+
+static int getBoardFamily(void)
+{
+	int ret = 0;
+	ret |= gpio_get_value(FAMILY_CFG3) << 3;
+	ret |= gpio_get_value(FAMILY_CFG2) << 2;
+	ret |= gpio_get_value(FAMILY_CFG1) << 1;
+	ret |= gpio_get_value(FAMILY_CFG0) << 0;
+	return ret;
+}
+
+static int getBoardId(void)
+{
+	int ret = 0;
+
+	ret |= gpio_get_value(MODEL_ID1) << 1;
+	ret |= gpio_get_value(MODEL_ID0) << 0;
+	return ret;
 }
 
 static void setup_iomux_touch(void)
@@ -404,6 +441,16 @@ void board_late_mmc_env_init(void)
 }
 
 #if defined(CONFIG_VIDEO_IPUV3)
+static int panel_bobo9(struct display_info_t const *dev)
+{
+	return (ID_BOBO9 == getBoardId());
+}
+
+static int panel_bobo12(struct display_info_t const *dev)
+{
+	return (ID_BOBO12 == getBoardId());
+}
+
 static void enable_rgb(struct display_info_t const *dev)
 {
 	imx_iomux_v3_setup_multiple_pads(rgb_pads, ARRAY_SIZE(rgb_pads));
@@ -478,7 +525,7 @@ struct display_info_t const displays[] = {{
 	.bus	= -1,
 	.addr	= 0,
 	.pixfmt	= IPU_PIX_FMT_RGB666,
-	.detect	= NULL,
+	.detect	= panel_bobo9,
 	.enable	= enable_rgb,
 	.mode	= {
 		.name           = "CTP-WVGA",
@@ -498,7 +545,7 @@ struct display_info_t const displays[] = {{
 	.bus	= -1,
 	.addr	= 0,
 	.pixfmt = IPU_PIX_FMT_RGB24,
-	.detect = NULL,
+	.detect = panel_bobo12,
 	.enable = enable_lvds,
 	.mode = {
 		.name = "CTP-WXGA",
@@ -639,6 +686,7 @@ int board_early_init_f(void)
 	/* pull hold on pin */
 	gpio_direction_output(PWR_HOLDON, 1);
 
+	setup_board_version();
 	setup_iomux_uart();
 #if defined(CONFIG_VIDEO_IPUV3)
 	setup_display();
@@ -654,6 +702,7 @@ int board_init(void)
 	gd->bd->bi_boot_params = PHYS_SDRAM + 0x100;
 
 	setup_i2c(1, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info1);
+
 #ifdef CONFIG_CMD_NAND
 	setup_gpmi_nand();
 #endif
@@ -858,13 +907,22 @@ int board_late_init(void)
 #ifdef CONFIG_ENV_IS_IN_MMC
 	board_late_mmc_env_init();
 #endif
-	setup_board_version();
 	return 0;
 }
 
 int checkboard(void)
 {
-	puts("Board: MX6-Bobo9\n");
+	int boardId = 0;
+	boardId = getBoardId();
+
+	if(ID_BOBO9 == boardId)
+	{
+		puts("Board: MX6-BoBo9\n");
+	}
+	else if (ID_BOBO12 == boardId)
+	{
+		puts("Board: MX6-BoBo12\n");
+	}
 	return 0;
 }
 
