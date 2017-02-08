@@ -340,8 +340,11 @@ static int getBoardId(void)
 
 static void setup_board_version(void)
 {
-	setenv("fdt_file", (getBoardId() == ID_BOBO9) ?
+	int boardId = getBoardId();
+	setenv("fdt_file", (boardId == ID_BOBO9) ?
 		"imx6dl-bobo9.dtb" : "imx6dl-bobo12.dtb");
+	setenv("videoargs", (boardId == ID_BOBO9) ?
+		"video=mxcfb0:dev=lcd" : "video=mxcfb0:dev=ldb");
 }
 
 static void setup_iomux_touch(void)
