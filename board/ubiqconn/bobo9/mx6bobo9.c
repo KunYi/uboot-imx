@@ -206,6 +206,14 @@ static iomux_v3_cfg_t const di0_pads[] = {
 	MX6_PAD_DI0_PIN3__IPU1_DI0_PIN03,		/* DISP0_VSYNC */
 };
 
+static iomux_v3_cfg_t const lcd_pads[] = {
+	MX6_PAD_EIM_DA5__GPIO3_IO05	| MUX_PAD_CTRL(NO_PAD_CTRL),	/* LCD_PWR_EN */
+	MX6_PAD_EIM_A22__GPIO2_IO16	| MUX_PAD_CTRL(NO_PAD_CTRL),	/* LCD_RESET */
+	MX6_PAD_GPIO_9__PWM1_OUT	| MUX_PAD_CTRL(NO_PAD_CTRL),	/* LCD_CNTRST_PWM */
+	MX6_PAD_SD4_DAT2__PWM4_OUT	| MUX_PAD_CTRL(NO_PAD_CTRL),	/* LCD_BACKLIGHT-DIM_PWM */
+	MX6_PAD_CSI0_DAT7__GPIO5_IO25	| MUX_PAD_CTRL(NO_PAD_CTRL),	/* BACKLIGHT_EN_B */
+};
+
 static iomux_v3_cfg_t const rgb_pads[] = {
 	MX6_PAD_DI0_DISP_CLK__IPU1_DI0_DISP_CLK | MUX_PAD_CTRL(NO_PAD_CTRL),
 	MX6_PAD_DI0_PIN15__IPU1_DI0_PIN15 | MUX_PAD_CTRL(NO_PAD_CTRL),
@@ -457,10 +465,8 @@ static int panel_bobo12(struct display_info_t const *dev)
 	return (ID_BOBO12 == getBoardId());
 }
 
-static void enable_rgb(struct display_info_t const *dev)
+static void enable_lcd(void)
 {
-	imx_iomux_v3_setup_multiple_pads(rgb_pads, ARRAY_SIZE(rgb_pads));
-
 	/* turn on lcd */
 	gpio_direction_output(LCD_RESET, 0);
 	/* PWM1 for output contrast */
@@ -490,6 +496,13 @@ static void enable_rgb(struct display_info_t const *dev)
 	return;
 error:
 	printf("enabled LCD failed\n");
+
+}
+
+static void enable_rgb(struct display_info_t const *dev)
+{
+	imx_iomux_v3_setup_multiple_pads(rgb_pads, ARRAY_SIZE(rgb_pads));
+	enable_lcd();
 }
 
 static void enable_lvds(struct display_info_t const *dev)
@@ -504,10 +517,12 @@ static void enable_lvds(struct display_info_t const *dev)
 	     | IOMUXC_GPR2_DATA_WIDTH_CH1_24BIT
 	     | IOMUXC_GPR2_BIT_MAPPING_CH0_SPWG
 	     | IOMUXC_GPR2_DATA_WIDTH_CH0_24BIT
-	     | IOMUXC_GPR2_LVDS_CH0_MODE_ENABLED_DI0
-	     | IOMUXC_GPR2_LVDS_CH1_MODE_DISABLED;
+	     | IOMUXC_GPR2_LVDS_CH0_MODE_DISABLED
+	     | IOMUXC_GPR2_LVDS_CH1_MODE_ENABLED_DI0;
 	writel(reg, &iomux->gpr[2]);
 
+	imx_iomux_v3_setup_multiple_pads(lcd_pads, ARRAY_SIZE(lcd_pads));
+	enable_lcd();
 }
 
 /*
