@@ -299,7 +299,7 @@ static struct i2c_pads_info i2c_pad_info1 = {
 	}
 };
 
-static void setup_board_version(void)
+static void setup_iomux_board(void)
 {
 	imx_iomux_v3_setup_multiple_pads(hwId_pads, ARRAY_SIZE(hwId_pads));
 	imx_iomux_v3_setup_multiple_pads(boardId_pads, ARRAY_SIZE(boardId_pads));
@@ -328,6 +328,12 @@ static int getBoardId(void)
 	ret |= gpio_get_value(MODEL_ID1) << 1;
 	ret |= gpio_get_value(MODEL_ID0) << 0;
 	return ret;
+}
+
+static void setup_board_version(void)
+{
+	setenv("fdt_file", (getBoardId() == ID_BOBO9) ?
+		"imx6dl-bobo9.dtb" : "imx6dl-bobo12.dtb");
 }
 
 static void setup_iomux_touch(void)
@@ -686,7 +692,7 @@ int board_early_init_f(void)
 	/* pull hold on pin */
 	gpio_direction_output(PWR_HOLDON, 1);
 
-	setup_board_version();
+	setup_iomux_board();
 	setup_iomux_uart();
 #if defined(CONFIG_VIDEO_IPUV3)
 	setup_display();
@@ -907,6 +913,7 @@ int board_late_init(void)
 #ifdef CONFIG_ENV_IS_IN_MMC
 	board_late_mmc_env_init();
 #endif
+	setup_board_version();
 	return 0;
 }
 
@@ -914,6 +921,9 @@ int checkboard(void)
 {
 	int boardId = 0;
 	boardId = getBoardId();
+
+	if (0 != getBoardFamily())
+		boardId |= 0xF0;
 
 	if(ID_BOBO9 == boardId)
 	{
@@ -923,6 +933,11 @@ int checkboard(void)
 	{
 		puts("Board: MX6-BoBo12\n");
 	}
+	else {
+		puts("Board: Unknown, Not support!!!\n");
+		return 1;
+	}
+
 	return 0;
 }
 
