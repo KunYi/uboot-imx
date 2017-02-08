@@ -95,6 +95,8 @@ DECLARE_GLOBAL_DATA_PTR;
 #define MODEL_ID1	IMX_GPIO_NR(5, 22)
 #define MODEL_ID0	IMX_GPIO_NR(5, 20)
 
+#define TOUCH_EN	IMX_GPIO_NR(2, 18)
+
 enum { ID_BOBO9 = 1,
        ID_BOBO12 = 2,
        ID_UNKNOW
@@ -350,6 +352,7 @@ static void setup_board_version(void)
 static void setup_iomux_touch(void)
 {
 	imx_iomux_v3_setup_multiple_pads(touch_pads, ARRAY_SIZE(touch_pads));
+	gpio_direction_output(TOUCH_EN, 0);
 };
 
 
@@ -932,6 +935,7 @@ int board_late_init(void)
 	board_late_mmc_env_init();
 #endif
 	setup_board_version();
+	gpio_set_value(TOUCH_EN, 1);
 	return 0;
 }
 
