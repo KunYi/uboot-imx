@@ -765,6 +765,13 @@ int power_init_board(void)
 	reg &= ~(0x7F);
 	reg |= 114;
 	pmic_reg_write(pfuze, PFUZE100_SW2VOL, reg);
+
+	/* setting VGEN4 to 1.8v and turn on*/
+	pmic_reg_read(pfuze, PFUZE100_VGEN4VOL, &reg);
+	reg &= ~(LDO_VOL_MASK);
+	reg |= (LDOB_1_80V | LDO_EN);
+	pmic_reg_write(pfuze, PFUZE100_VGEN4VOL, reg);
+
 #if 0
 	/* SW3A/SW3B Singal Phase */
 	/* setting SW3AVOL/SW3BVOL to 1.5V */
@@ -772,12 +779,6 @@ int power_init_board(void)
 	reg &= ~(0x3F);
 	reg |= 78;
 	pmic_reg_write(pfuze, PFUZE100_SW3AVOL, reg);
-
-	/* setting VGEN4 to 1.8v and off for WIFI Power*/
-	pmic_reg_read(pfuze, PFUZE100_VGEN4VOL, &reg);
-	reg &= ~(LDO_VOL_MASK | LDO_EN);
-	reg |= LDOB_1_80V;
-	pmic_reg_write(pfuze, PFUZE100_VGEN4VOL, reg);
 
 	/* setting VGEN6 to 3.3v and keep off */
 	pmic_reg_read(pfuze, PFUZE100_VGEN6VOL, &reg);
@@ -941,7 +942,19 @@ int board_late_init(void)
 
 int checkboard(void)
 {
-	int boardId = 0;
+	u32 boardId = 0;
+	/*
+	 * NEED ENABLED CONFIG_DISPLAY_CPUINFO
+	 * to called get_imx_reset_cause();
+	 *
+	 * check reset cause when not POR,
+	 * will skip checkboard() directly return 0
+	 *
+	 */
+	boardId = get_imx_reset_cause();
+	if ((0x00001 != boardId) || (0x00011 != boardId))
+		return 0;
+
 	boardId = getBoardId();
 
 	if (0 != getBoardFamily())
