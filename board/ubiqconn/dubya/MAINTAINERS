@@ -1,0 +1,6 @@
+MX6DUBYA BOARD
+M:	KunYi Chen <kunnyi_chen@ubiqconn.com>
+S:	Maintained
+F:	board/ubiqconn/dubya/
+F:	include/configs/dubya.h
+F:	configs/dubya_defconfig

@@ -220,6 +220,10 @@ config TARGET_MX6BOBO9
 	bool "Support Navico Bobo 9"
 	select DM
 	select DM_THERMAL
+config TARGET_MX6DUBYA
+	bool "Support Navico Dubya"
+	select DM
+	select DM_THERMAL
 
 endchoice
 
@@ -259,5 +263,6 @@ source "board/wandboard/Kconfig"
 source "board/warp/Kconfig"
 source "board/ubiqconn/tinto/Kconfig"
 source "board/ubiqconn/bobo9/Kconfig"
+source "board/ubiqconn/dubya/Kconfig"
 
 endif
