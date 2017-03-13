@@ -1,13 +1,13 @@
 /*
- * Copyright (C) 2012-2015 Freescale Semiconductor, Inc.
+ * Copyright (C) 2017 UBIQCONN
  *
- * Configuration settings for the Freescale i.MX6Q SabreSD board.
+ * Configuration settings for the Navico i.MX6D DUBYA board.
  *
  * SPDX-License-Identifier:	GPL-2.0+
  */
 
-#ifndef __MX6TINTO_CONFIG_H
-#define __MX6TINTO_CONFIG_H
+#ifndef __MX6DUBYA_CONFIG_H
+#define __MX6DUBYA_CONFIG_H
 
 #if (defined(CONFIG_MX6SOLO) || defined(CONFIG_MX6S))
 #define CONFIG_MX6DL
@@ -48,6 +48,20 @@
 #ifdef CONFIG_LDO_BYPASS_CHECK
 #undef CONFIG_LDO_BYPASS_CHECK
 #endif
+
+/* NET Support */
+#define CONFIG_CMD_PING
+#define CONFIG_CMD_DHCP
+#define CONFIG_CMD_MII
+#define CONFIG_FEC_MXC
+#define CONFIG_MII
+#define IMX_FEC_BASE			ENET_BASE_ADDR
+#define CONFIG_FEC_XCV_TYPE		RGMII
+#define CONFIG_ETHPRIME			"FEC"
+#define CONFIG_FEC_MXC_PHYADDR		0
+
+#define CONFIG_PHYLIB
+#define CONFIG_PHY_SMSC
 
 #include <linux/sizes.h>
 
@@ -460,4 +474,4 @@
 	#define CONFIG_WAVEFORM_BUF_SIZE		0x200000
 #endif /* CONFIG_SPLASH_SCREEN && CONFIG_MXC_EPDC */
 
-#endif                         /* __MX6TINTO_CONFIG_H */
+#endif                         /* __MX6DUBYA_CONFIG_H */

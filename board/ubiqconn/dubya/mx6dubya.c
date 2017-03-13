@@ -29,6 +29,7 @@
 #include <linux/fb.h>
 #include <asm/arch/mx6-ddr.h>
 #include <usb.h>
+#include <netdev.h>
 
 #ifdef CONFIG_FSL_FASTBOOT
 #include <fsl_fastboot.h>
@@ -55,6 +56,9 @@ DECLARE_GLOBAL_DATA_PTR;
 	PAD_CTL_SPEED_MED | PAD_CTL_DSE_40ohm | PAD_CTL_HYS |	\
 	PAD_CTL_ODE | PAD_CTL_SRE_FAST)
 
+#define ENET_PAD_CTRL  (PAD_CTL_PUS_100K_UP |			\
+	PAD_CTL_SPEED_MED | PAD_CTL_DSE_40ohm | PAD_CTL_HYS)
+
 #define OTG_ID_PAD_CTRL (PAD_CTL_PKE | PAD_CTL_PUE |		\
 	PAD_CTL_PUS_47K_UP  | PAD_CTL_SPEED_LOW |		\
 	PAD_CTL_DSE_80ohm   | PAD_CTL_SRE_FAST  | PAD_CTL_HYS)
@@ -69,7 +73,6 @@ DECLARE_GLOBAL_DATA_PTR;
 
 #define NAND_PAD_CTRL	(PAD_CTL_100K_UP |			\
 		PAD_CTL_SPEED
-#define I2C_PMIC	0
 
 #define I2C_PAD MUX_PAD_CTRL(I2C_PAD_CTRL)
 
@@ -85,6 +88,7 @@ DECLARE_GLOBAL_DATA_PTR;
 #define WIFI_EN		IMX_GPIO_NR(5, 26)
 #define BT_EN		IMX_GPIO_NR(5, 24)
 
+#define DUBYA_FAMILY_ID (4)
 #define FAMILY_CFG3	IMX_GPIO_NR(2, 11)
 #define FAMILY_CFG2	IMX_GPIO_NR(3, 24)
 #define FAMILY_CFG1	IMX_GPIO_NR(3, 26)
@@ -94,8 +98,12 @@ DECLARE_GLOBAL_DATA_PTR;
 
 #define TOUCH_EN	IMX_GPIO_NR(2, 18)
 
-enum { ID_BOBO9 = 1,
-       ID_BOBO12 = 2,
+#define ETH_PHY_RESET	IMX_GPIO_NR(4, 6)
+
+enum { ID_DUBYA7 = 1,
+       ID_DUBYA9 = 2,
+       ID_DUBYA12 = 3,
+       ID_DUBYA16 = 4,
        ID_UNKNOW
 };
 
@@ -110,6 +118,7 @@ static iomux_v3_cfg_t const pwr_pads[] = {
 	(MX6_PAD_GPIO_7__GPIO1_IO07 | MUX_PAD_CTRL(NO_PAD_CTRL)),	/* PWR_HOLDON */
 };
 
+#if 0
 static iomux_v3_cfg_t const hwId_pads[] = {
 	MX6_PAD_ENET_TXD0__GPIO1_IO30	| MUX_PAD_CTRL(WEAK_PULLUP),	/* HW_ID0 */
 	MX6_PAD_ENET_TXD1__GPIO1_IO29	| MUX_PAD_CTRL(WEAK_PULLUP),	/* HW_ID1 */
@@ -117,6 +126,7 @@ static iomux_v3_cfg_t const hwId_pads[] = {
 	MX6_PAD_KEY_ROW0__GPIO4_IO07	| MUX_PAD_CTRL(WEAK_PULLUP),	/* HW_ID3 */
 	MX6_PAD_ENET_MDC__GPIO1_IO31	| MUX_PAD_CTRL(WEAK_PULLUP),	/* HW_ID4 */
 };
+#endif
 
 static iomux_v3_cfg_t const boardId_pads[] = {
 	MX6_PAD_SD4_DAT3__GPIO2_IO11	| MUX_PAD_CTRL(NO_PAD_CTRL),	/* BASE_DET */
@@ -135,6 +145,35 @@ static iomux_v3_cfg_t const hwVer_pads[] = {
 	MX6_PAD_SD3_RST__GPIO7_IO08	| MUX_PAD_CTRL(WEAK_PULLDOWN),	/* HW_VER_2 */
 	MX6_PAD_DISP0_DAT22__GPIO5_IO16	| MUX_PAD_CTRL(WEAK_PULLDOWN),	/* HW_VER_3/I2S_WCLK */
 };
+
+static iomux_v3_cfg_t const enet_pads[] = {
+	MX6_PAD_ENET_MDIO__ENET_MDIO		| MUX_PAD_CTRL(ENET_PAD_CTRL),
+	MX6_PAD_ENET_MDC__ENET_MDC		| MUX_PAD_CTRL(ENET_PAD_CTRL),
+	MX6_PAD_RGMII_TXC__RGMII_TXC	| MUX_PAD_CTRL(ENET_PAD_CTRL),
+	MX6_PAD_RGMII_TD0__RGMII_TD0	| MUX_PAD_CTRL(ENET_PAD_CTRL),
+	MX6_PAD_RGMII_TD1__RGMII_TD1	| MUX_PAD_CTRL(ENET_PAD_CTRL),
+	MX6_PAD_RGMII_TX_CTL__RGMII_TX_CTL	| MUX_PAD_CTRL(ENET_PAD_CTRL),
+	MX6_PAD_ENET_REF_CLK__ENET_TX_CLK	| MUX_PAD_CTRL(ENET_PAD_CTRL),
+	MX6_PAD_RGMII_RXC__RGMII_RXC	| MUX_PAD_CTRL(ENET_PAD_CTRL),
+	MX6_PAD_RGMII_RD0__RGMII_RD0	| MUX_PAD_CTRL(ENET_PAD_CTRL),
+	MX6_PAD_RGMII_RD1__RGMII_RD1	| MUX_PAD_CTRL(ENET_PAD_CTRL),
+	MX6_PAD_RGMII_RX_CTL__RGMII_RX_CTL	| MUX_PAD_CTRL(ENET_PAD_CTRL),
+	MX6_PAD_GPIO_16__ENET_REF_CLK		| MUX_PAD_CTRL(ENET_PAD_CTRL),
+	MX6_PAD_KEY_COL2__ENET_RX_DATA2	| MUX_PAD_CTRL(ENET_PAD_CTRL),
+	/* SMSC LAN8710 PHY Reset */
+	MX6_PAD_KEY_COL0__GPIO4_IO06	| MUX_PAD_CTRL(NO_PAD_CTRL),
+
+};
+
+static void setup_iomux_enet(void)
+{
+	imx_iomux_v3_setup_multiple_pads(enet_pads, ARRAY_SIZE(enet_pads));
+	/* Reset SMSC LAN8710 PHY */
+	gpio_direction_output(ETH_PHY_RESET , 0);
+	mdelay(10);
+	gpio_set_value(ETH_PHY_RESET, 1);
+	udelay(100);
+}
 
 #if (CONFIG_MXC_UART_BASE == UART1_BASE)
 static iomux_v3_cfg_t const uart1_pads[] = {
@@ -306,9 +345,13 @@ static struct i2c_pads_info i2c_pad_info1 = {
 	}
 };
 
+
+
 static void setup_iomux_board(void)
 {
+#if 0
 	imx_iomux_v3_setup_multiple_pads(hwId_pads, ARRAY_SIZE(hwId_pads));
+#endif
 	imx_iomux_v3_setup_multiple_pads(boardId_pads, ARRAY_SIZE(boardId_pads));
 	gpio_direction_input(FAMILY_CFG3);
 	gpio_direction_input(FAMILY_CFG2);
@@ -340,10 +383,8 @@ static int getBoardId(void)
 static void setup_board_version(void)
 {
 	int boardId = getBoardId();
-/*
- * 	setenv("fdt_file", (boardId == ID_DUBYA16) ?
- *		"imx6q-dubya16.dtb" : "imx6q-dubya.dtb");
- */
+	setenv("fdt_file", (boardId == ID_DUBYA16) ?
+		"imx6q-dubya16.dtb" : "imx6q-dubya.dtb");
 }
 
 static void setup_iomux_touch(void)
@@ -644,6 +685,28 @@ int overwrite_console(void)
 	return 1;
 }
 
+static void setup_fec(void)
+{
+	int ret;
+
+	if (is_mx6dqp()) {
+		/* select ENET MAC0 TX clock from PLL */
+		imx_iomux_set_gpr_register(5, 9, 1, 1);
+	} else {
+		imx_iomux_set_gpr_register(1, 21, 1, 1);
+	}
+	ret = enable_fec_anatop_clock(0, ENET_125MHZ);
+	if (ret)
+		printf("Error fec anatop clock settings!\n");
+}
+
+int board_eth_init(bd_t *bis)
+{
+	setup_iomux_enet();
+
+	return cpu_eth_init(bis);
+}
+
 #ifdef CONFIG_USB_EHCI_MX6
 #define USB_OTHERREGS_OFFSET	0x800
 #define UCTRL_PWR_POL		(1 << 9)
@@ -725,6 +788,10 @@ int board_init(void)
 #ifdef CONFIG_USB_EHCI_MX6
 	setup_usb();
 #endif
+
+#ifdef CONFIG_FEC_MXC
+	setup_fec();
+#endif
 	return 0;
 }
 
@@ -762,22 +829,33 @@ int checkboard(void)
 	 * will skip checkboard() directly return 0
 	 *
 	 */
+/*
 	boardId = get_imx_reset_cause();
 	if ((0x00001 != boardId) || (0x00011 != boardId))
 		return 0;
-
+*/
 	boardId = getBoardId();
 
-	if (0 != getBoardFamily())
-		boardId |= 0xF0;
-
-	if(ID_BOBO9 == boardId)
+	if (DUBYA_FAMILY_ID != getBoardFamily())
 	{
-		puts("Board: MX6-BoBo9\n");
+/*		boardId |= 0xF0; */
 	}
-	else if (ID_BOBO12 == boardId)
+
+	if(ID_DUBYA7 == boardId)
 	{
-		puts("Board: MX6-BoBo12\n");
+		puts("Board: MX6-DUBYA7\n");
+	}
+	else if (ID_DUBYA9 == boardId)
+	{
+		puts("Board: MX6-DUBYA9\n");
+	}
+	else if (ID_DUBYA12 == boardId)
+	{
+		puts("Board: MX6-DUBYA12\n");
+	}
+	else if (ID_DUBYA16 == boardId)
+	{
+		puts("Board: MX6-DUBYA16\n");
 	}
 	else {
 		puts("Board: Unknown, Not support!!!\n");
