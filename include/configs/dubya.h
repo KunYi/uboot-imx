@@ -75,7 +75,7 @@
 #define CONFIG_REVISION_TAG
 
 /* Size of malloc() pool */
-#define CONFIG_SYS_MALLOC_LEN		(4 * SZ_1M)
+#define CONFIG_SYS_MALLOC_LEN		(9 * SZ_1M)
 
 #define CONFIG_BOARD_EARLY_INIT_F
 #define CONFIG_BOARD_LATE_INIT
