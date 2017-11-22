@@ -100,10 +100,10 @@ DECLARE_GLOBAL_DATA_PTR;
 
 #define ETH_PHY_RESET	IMX_GPIO_NR(4, 6)
 
-enum { ID_DUBYA7 = 1,
-       ID_DUBYA9 = 2,
-       ID_DUBYA12 = 3,
-       ID_DUBYA16 = 4,
+enum { ID_DUBYA7 = 0,
+       ID_DUBYA9 = 1,
+       ID_DUBYA12 = 2,
+       ID_DUBYA16 = 3,
        ID_UNKNOW
 };
 
@@ -161,8 +161,7 @@ static iomux_v3_cfg_t const enet_pads[] = {
 	MX6_PAD_GPIO_16__ENET_REF_CLK		| MUX_PAD_CTRL(ENET_PAD_CTRL),
 	MX6_PAD_KEY_COL2__ENET_RX_DATA2	| MUX_PAD_CTRL(ENET_PAD_CTRL),
 	/* SMSC LAN8710 PHY Reset */
-	MX6_PAD_KEY_COL0__GPIO4_IO06	| MUX_PAD_CTRL(NO_PAD_CTRL),
-
+	MX6_PAD_EIM_DA6__GPIO3_IO06	| MUX_PAD_CTRL(NO_PAD_CTRL),
 };
 
 static void setup_iomux_enet(void)
@@ -364,10 +363,10 @@ static void setup_iomux_board(void)
 static int getBoardFamily(void)
 {
 	int ret = 0;
-	ret |= gpio_get_value(FAMILY_CFG3) << 3;
-	ret |= gpio_get_value(FAMILY_CFG2) << 2;
-	ret |= gpio_get_value(FAMILY_CFG1) << 1;
-	ret |= gpio_get_value(FAMILY_CFG0) << 0;
+	ret |= (gpio_get_value(FAMILY_CFG3)) ? 1 << 3 : 0;
+	ret |= (gpio_get_value(FAMILY_CFG2)) ? 1 << 2 : 0;
+	ret |= (gpio_get_value(FAMILY_CFG1)) ? 1 << 1 : 0;
+	ret |= (gpio_get_value(FAMILY_CFG0)) ? 1 << 0 : 0;
 	return ret;
 }
 
@@ -498,184 +497,6 @@ void board_late_mmc_env_init(void)
 	run_command(cmd, 0);
 }
 
-#if defined(CONFIG_VIDEO_IPUV3)
-
-static void enable_lcd(void)
-{
-	/* turn on lcd */
-	gpio_direction_output(LCD_RESET, 0);
-	/* PWM1 for output contrast */
-	if (pwm_init(PWM_LCD_CNTRST, 0, 0))
-		goto error;
-	/* duty cycle: 500ns, period: 3000ns */
-	if (pwm_config(PWM_LCD_CNTRST, 5000, 300000))
-		goto error;
-	if (pwm_enable(PWM_LCD_CNTRST))
-		goto error;
-
-	gpio_direction_output(LCD_PWR_EN, 1);
-
-	// turn on backlight
-	/* PWM3 for brightness control */
-	if (pwm_init(PWM_BACKLIGHT, 0, 0))
-		goto error;
-	/* duty: period: 3000ns */
-	if (pwm_config(PWM_BACKLIGHT, 20000, 300000))
-		goto error;
-	if (pwm_enable(PWM_BACKLIGHT))
-		goto error;
-
-	/* release LCD reset */
-	gpio_set_value(LCD_RESET, 1);
-	gpio_direction_output(BL_EN, 0);
-	return;
-error:
-	printf("enabled LCD failed\n");
-
-}
-
-static void enable_rgb(struct display_info_t const *dev)
-{
-	imx_iomux_v3_setup_multiple_pads(rgb_pads, ARRAY_SIZE(rgb_pads));
-	enable_lcd();
-}
-
-static void enable_lvds(struct display_info_t const *dev)
-{
-	struct iomuxc *iomux = (struct iomuxc *)IOMUXC_BASE_ADDR;
-	u32	reg = readl(&iomux->gpr[2]);
-
-	reg = IOMUXC_GPR2_BGREF_RRMODE_EXTERNAL_RES
-	     | IOMUXC_GPR2_DI1_VS_POLARITY_ACTIVE_HIGH
-	     | IOMUXC_GPR2_DI0_VS_POLARITY_ACTIVE_HIGH
-	     | IOMUXC_GPR2_BIT_MAPPING_CH1_SPWG
-	     | IOMUXC_GPR2_DATA_WIDTH_CH1_24BIT
-	     | IOMUXC_GPR2_BIT_MAPPING_CH0_SPWG
-	     | IOMUXC_GPR2_DATA_WIDTH_CH0_24BIT
-	     | IOMUXC_GPR2_LVDS_CH0_MODE_DISABLED
-	     | IOMUXC_GPR2_LVDS_CH1_MODE_ENABLED_DI0;
-	writel(reg, &iomux->gpr[2]);
-
-	imx_iomux_v3_setup_multiple_pads(lcd_pads, ARRAY_SIZE(lcd_pads));
-	enable_lcd();
-}
-
-/*
- * the below defined in drivers/video/mxcfb.h
- */
-#define FB_SYNC_OE_LOW_ACT	(0x80000000)
-#define FB_SYNC_CLK_LAT_FALL	(0x40000000)
-#define FB_SYNC_DATA_INVERT	(0x20000000)
-#define FB_SYNC_CLK_IDLE_EN	(0x10000000)
-#define FB_SYNC_SHARP_MODE	(0x08000000)
-#define FB_SYNC_SWAP_RGB	(0x04000000)
-/*
- *  LCD Modules
- *  select by panel env. variable, details in arch/arm/imx-common/video.c
- *	setenv("panel", "CTP-WVGA") or
- *	setenv("panel", "CTP-WXGA")
- *  CTP-WVGA for BoBo9
- *  CTO-WXGA for Bobo12
- */
-struct display_info_t const displays[] = {{
-	.bus	= -1,
-	.addr	= 0,
-	.pixfmt	= IPU_PIX_FMT_RGB666,
-	.detect	= NULL,
-	.enable	= enable_rgb,
-	.mode	= {
-		.name           = "CTP-WVGA",
-		.refresh        = 60,
-		.xres           = 800,
-		.yres           = 480,
-		.pixclock       = 30000, /* ~ 33MHz */
-		.left_margin    = 46,  /* HBP */
-		.right_margin   = 208, /* HFP */
-		.upper_margin   = 23,  /* VBP */
-		.lower_margin   = 20,  /* VFP */
-		.hsync_len      = 2,
-		.vsync_len      = 2,
-		.sync           = FB_SYNC_EXT | FB_SYNC_DATA_INVERT | FB_SYNC_CLK_LAT_FALL,
-		.vmode          = FB_VMODE_NONINTERLACED
-	}}, {
-	.bus	= -1,
-	.addr	= 0,
-	.pixfmt = IPU_PIX_FMT_RGB24,
-	.detect = NULL,
-	.enable = enable_lvds,
-	.mode = {
-		.name = "CTP-WXGA",
-		.refresh        = 60,
-		.xres           = 1280,
-		.yres           = 800,
-		.pixclock       = 14065, /* ~ 71.1MHz */
-		.left_margin    = 210, /* HBP, Horizontal Back porch */
-		.right_margin   = 46,  /* HFP, Horizontal Front Porch */
-		.upper_margin   = 23,  /* VBP, Vertical Back Porch */
-		.lower_margin   = 22,  /* VFP, Vertical Front Porch */
-		.hsync_len      = 40,  /* HSPW, Horizontal Sync Pulse Width */
-		.vsync_len	= 20,  /* VSPW, Vertical Sync Pulse Width  */
-		.sync		= FB_SYNC_EXT,
-		.vmode		= FB_VMODE_NONINTERLACED
-} } };
-
-size_t display_count = ARRAY_SIZE(displays);
-
-static void setup_display(void)
-{
-	struct mxc_ccm_reg *mxc_ccm = (struct mxc_ccm_reg *)CCM_BASE_ADDR;
-	struct iomuxc *iomux = (struct iomuxc *)IOMUXC_BASE_ADDR;
-	int reg;
-
-	imx_iomux_v3_setup_multiple_pads(di0_pads, ARRAY_SIZE(di0_pads));
-
-	enable_ipu_clock();
-
-	/* Turn on LDB0, LDB1, IPU,IPU DI0 clocks */
-	reg = readl(&mxc_ccm->CCGR3);
-	reg |=  MXC_CCM_CCGR3_LDB_DI0_MASK | MXC_CCM_CCGR3_LDB_DI1_MASK;
-	writel(reg, &mxc_ccm->CCGR3);
-
-	/* set LDB0, LDB1 clk select to 011/011 */
-	reg = readl(&mxc_ccm->cs2cdr);
-	reg &= ~(MXC_CCM_CS2CDR_LDB_DI0_CLK_SEL_MASK
-		 | MXC_CCM_CS2CDR_LDB_DI1_CLK_SEL_MASK);
-	reg |= (3 << MXC_CCM_CS2CDR_LDB_DI0_CLK_SEL_OFFSET)
-	      | (3 << MXC_CCM_CS2CDR_LDB_DI1_CLK_SEL_OFFSET);
-	writel(reg, &mxc_ccm->cs2cdr);
-
-	reg = readl(&mxc_ccm->cscmr2);
-	reg |= MXC_CCM_CSCMR2_LDB_DI0_IPU_DIV | MXC_CCM_CSCMR2_LDB_DI1_IPU_DIV;
-	writel(reg, &mxc_ccm->cscmr2);
-
-	reg = readl(&mxc_ccm->chsccdr);
-	reg |= (CHSCCDR_CLK_SEL_LDB_DI0
-		<< MXC_CCM_CHSCCDR_IPU1_DI0_CLK_SEL_OFFSET);
-	reg |= (CHSCCDR_CLK_SEL_LDB_DI0
-		<< MXC_CCM_CHSCCDR_IPU1_DI1_CLK_SEL_OFFSET);
-	writel(reg, &mxc_ccm->chsccdr);
-
-	reg = IOMUXC_GPR2_BGREF_RRMODE_EXTERNAL_RES
-	     | IOMUXC_GPR2_DI1_VS_POLARITY_ACTIVE_HIGH
-	     | IOMUXC_GPR2_DI0_VS_POLARITY_ACTIVE_HIGH
-	     | IOMUXC_GPR2_BIT_MAPPING_CH1_SPWG
-	     | IOMUXC_GPR2_DATA_WIDTH_CH1_18BIT
-	     | IOMUXC_GPR2_BIT_MAPPING_CH0_SPWG
-	     | IOMUXC_GPR2_DATA_WIDTH_CH0_18BIT
-	     | IOMUXC_GPR2_LVDS_CH0_MODE_DISABLED
-	     | IOMUXC_GPR2_LVDS_CH1_MODE_ENABLED_DI0;
-	writel(reg, &iomux->gpr[2]);
-
-	reg = readl(&iomux->gpr[3]);
-	reg = (reg & ~(IOMUXC_GPR3_LVDS1_MUX_CTL_MASK
-			| IOMUXC_GPR3_HDMI_MUX_CTL_MASK))
-	    | (IOMUXC_GPR3_MUX_SRC_IPU1_DI0
-	       << IOMUXC_GPR3_LVDS1_MUX_CTL_OFFSET);
-	writel(reg, &iomux->gpr[3]);
-
-}
-#endif /* CONFIG_VIDEO_IPUV3 */
-
 /*
  * Do not overwrite the console
  * Use always serial for U-Boot console
@@ -767,7 +588,7 @@ int board_early_init_f(void)
 	setup_iomux_board();
 	setup_iomux_uart();
 #if defined(CONFIG_VIDEO_IPUV3)
-	setup_display();
+	setup_display_clock();
 #endif
 	setup_iomux_touch();
 
@@ -815,6 +636,9 @@ int board_late_init(void)
 #endif
 	setup_board_version();
 	gpio_set_value(TOUCH_EN, 1);
+#ifdef CONFIG_VIDEO_IPUV3
+	setup_display_lvds();
+#endif
 	return 0;
 }
 
