@@ -32,16 +32,18 @@ void board_late_mmc_env_init(void)
 {
 	char cmd[32];
 	char mmcblk[32];
+	u32 bootpart;
 	u32 dev_no = mmc_get_env_dev();
 
 	if (!check_mmc_autodetect())
 		return;
 
 	env_set_ulong("mmcdev", dev_no);
+	bootpart = env_get_ulong("bootpart", 10, 1);
 
 	/* Set mmcblk env */
-	sprintf(mmcblk, "/dev/mmcblk%dp2 rootwait rw",
-		mmc_map_to_kernel_blk(dev_no));
+	sprintf(mmcblk, "/dev/mmcblk%dp%d rootwait rw",
+		mmc_map_to_kernel_blk(dev_no), bootpart);
 	env_set("mmcroot", mmcblk);
 
 	sprintf(cmd, "mmc dev %d", dev_no);
