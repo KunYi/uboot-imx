@@ -112,7 +112,7 @@ struct tpm_cmd_t {
  * how long it will take.
  */
 #define MAX_COUNT_LONG		50
-
+/*
 enum tis_access {
 	TPM_ACCESS_VALID		= 0x80,
 	TPM_ACCESS_ACTIVE_LOCALITY	= 0x20,
@@ -127,5 +127,5 @@ enum tis_status {
 	TPM_STS_DATA_AVAIL		= 0x10,
 	TPM_STS_DATA_EXPECT		= 0x08,
 };
-
+*/
 #endif

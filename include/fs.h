@@ -13,6 +13,7 @@
 #define FS_TYPE_SANDBOX	3
 #define FS_TYPE_UBIFS	4
 #define FS_TYPE_BTRFS	5
+#define FS_TYPE_SQUASHFS 6
 
 int do_fat_size(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[]);
 

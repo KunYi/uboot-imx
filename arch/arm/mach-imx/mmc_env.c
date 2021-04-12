@@ -24,6 +24,9 @@ int mmc_get_env_dev(void)
 	/* If not boot from sd/mmc, use default value */
 	if ((boot_type != BOOT_TYPE_SD) && (boot_type != BOOT_TYPE_MMC))
 		return env_get_ulong("mmcdev", 10, CONFIG_SYS_MMC_ENV_DEV);
+	/* fixed env. on emmc device */
+	if (env_get_yesno("env_on_emmc"))
+		return CONFIG_SYS_MMC_ENV_DEV;
 
 	return board_mmc_get_env_dev(devno);
 }

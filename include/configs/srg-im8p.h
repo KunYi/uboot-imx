@@ -1,23 +1,30 @@
 /* SPDX-License-Identifier: GPL-2.0+ */
 /*
+ * Copyright 2021 UWINGS
+ *
  * Copyright 2019 NXP
  */
 
-#ifndef __IMX8MP_EVK_H
-#define __IMX8MP_EVK_H
+#ifndef __SRG_IM8P_H
+#define __SRG_IM8P_H
 
 #include <linux/sizes.h>
 #include <asm/arch/imx-regs.h>
 
 #include "imx_env.h"
 
-#define CONFIG_SYS_MMC_ENV_DEV		1   /* USDHC2 for MicroSD(1), USDHC3 for EMMC(2) */
-#define CONFIG_MMCROOT			"/dev/mmcblk1p1"  /* USDHC2 */
+#define CONFIG_SYS_MMC_ENV_DEV		2   /* USDHC2 for MicroSD(1), USDHC3 for EMMC(2) */
+#define CONFIG_MMCROOT			"/dev/mmcblk2p2"  /* EMMC */
 
 #ifdef  CONFIG_SYS_BOOTM_LEN
 #undef  CONFIG_SYS_BOOTM_LEN
 #endif
-#define CONFIG_SYS_BOOTM_LEN		(SZ_256M + SZ_128M)
+
+#ifndef SZ_384M
+#define SZ_384M				(SZ_256M + SZ_128M)
+#endif
+
+#define CONFIG_SYS_BOOTM_LEN		SZ_384M
 
 /* Size of malloc() pool */
 #ifdef CONFIG_SYS_MALLOC_LEN
@@ -71,17 +78,46 @@
 #endif
 
 #define PHY_ANEG_TIMEOUT 20000
+#define CONFIG_NET_RANDOM_ETHADDR
+//#define CONFIG_RTL8211F_PHY_FORCE_EEE_RXC_ON
+#endif
+#define BOOTENV_DEV_LEGACY_MMC(devtypeu, devtypel, instance) \
+	"bootcmd_" #devtypel #instance "=" \
+	"setenv mmcdev " #instance"; " \
+	"setenv mmcroot /dev/mmcblk" #instance"p${bootpart} rootwait rw; " \
+	"if run loadbootscript; then " \
+		"run bootscript; " \
+	"else " \
+		"if run loadimage; then " \
+			"run mmcboot; " \
+		"fi; " \
+	"fi;\0"
 
+#define BOOTENV_DEV_NAME_LEGACY_MMC(devtypeu, devtypel, instance) \
+	#devtypel #instance " "
+
+#ifdef CONFIG_DISTRO_DEFAULTS
+#define BOOT_TARGET_DEVICES(func) \
+	func(USB, usb, 0) \
+	func(MMC, mmc, 1) \
+	func(LEGACY_MMC, legacy_mmc, 1) \
+	func(MMC, mmc, 2) \
+	func(LEGACY_MMC, legacy_mmc, 2) \
+
+
+#include <config_distro_bootcmd.h>
+#else
+#define BOOTENV
 #endif
 
 #define JAILHOUSE_ENV \
 	"jh_clk= \0 " \
-	"jh_mmcboot=setenv fdt_file imx8mp-evk-root.dtb;" \
-		"setenv jh_clk clk_ignore_unused; " \
+	"jh_mmcboot=setenv fdt_file srg-im8p-root.dtb;;" \
+		"setenv jh_clk clk_ignore_unused; mem=2048MB;" \
 			   "if run loadimage; then " \
 				   "run mmcboot; " \
 			   "else run jh_netboot; fi; \0" \
-	"jh_netboot=setenv fdt_file imx8mp-evk-root.dtb; setenv jh_clk clk_ignore_unused; run netboot; \0 "
+	"jh_netboot=setenv fdt_file srg-im8p-root.dtb;; setenv jh_clk clk_ignore_unused; mem=2048MB; run netboot; \0 "
 
 #define CONFIG_MFG_ENV_SETTINGS \
 	CONFIG_MFG_ENV_SETTINGS_DEFAULT \
@@ -90,65 +126,75 @@
 	"emmc_dev=2\0"\
 	"sd_dev=1\0" \
 
-
-#ifdef CONFIG_NAND_BOOT
-#define MFG_NAND_PARTITION "mtdparts=gpmi-nand:64m(nandboot),16m(nandfit),32m(nandkernel),16m(nanddtb),8m(nandtee),-(nandrootfs)"
-#endif
-
 /* Initial environment variables */
-#if defined(CONFIG_NAND_BOOT)
-#define CONFIG_EXTRA_ENV_SETTINGS \
-	CONFIG_MFG_ENV_SETTINGS \
-	"splashimage=0x50000000\0" \
-	"fdt_addr=0x43000000\0"			\
-	"fdt_high=0xffffffffffffffff\0" \
-	"mtdparts=" MFG_NAND_PARTITION "\0" \
-	"console=ttymxc1,115200 earlycon=ec_imx6q,0x30890000,115200\0" \
-	"bootargs=console=ttymxc1,115200 earlycon=ec_imx6q,0x30890000,115200 ubi.mtd=nandrootfs "  \
-		"root=ubi0:nandrootfs rootfstype=ubifs "		     \
-		MFG_NAND_PARTITION \
-		"\0" \
-	"bootcmd=nand read ${loadaddr} 0x5000000 0x2000000;"\
-		"nand read ${fdt_addr} 0x7000000 0x100000;"\
-		"booti ${loadaddr} - ${fdt_addr}"
+#define FALLBACK_BOOTCOUNT_ENV \
+	"bootlimit=4\0" \
+	"bootfallback=echo Fallback to previous RootFS; " \
+		"if test ${bootpart} = 2; then " \
+		"	setenv bootpart 3; " \
+		"else " \
+		"	setenv bootpart 2; " \
+		"fi; " \
+		"setenv mmcroot /dev/mmcblk2p${bootpart} rootwait rw; " \
+		"setenv upgrade_available 0; setenv bootcount 0; saveenv;\0" \
+	"altbootcmd=run bootballback; " \
+		"run bootcmd;\0" \
 
-#else
 #define CONFIG_EXTRA_ENV_SETTINGS		\
 	CONFIG_MFG_ENV_SETTINGS \
 	JAILHOUSE_ENV \
-	"loadprefix=/boot/\0" \
+	FALLBACK_BOOTCOUNT_ENV \
+	BOOTENV \
+	"env_on_emmc=y\0" \
 	"script=/boot/boot.scr\0" \
-	"image=/boot/fitImage-initramfs.bin\0" \
+	"kernel_addr_r=" __stringify(CONFIG_LOADADDR) "\0" \
+	"bsp_script=/boot/boot.scr\0" \
+	"image=/boot/Image\0" \
 	"splashimage=0x50000000\0" \
 	"console=ttymxc1,115200\0" \
+	"fdt_addr_r=0x43000000\0"			\
 	"fdt_addr=0x43000000\0"			\
+	"boot_fdt=try\0" \
+	"bootpart=2\0" \
 	"fdt_high=0xffffffffffffffff\0"		\
-	"boot_fit=try\0" \
-	"bootpart=1\0" \
-	"fdt_file=/boot/" CONFIG_DEFAULT_FDT_FILE "\0" \
+	"boot_fit=no\0" \
+	"fdtfile=" CONFIG_DEFAULT_FDT_FILE "\0" \
+	"bootm_size=0x10000000\0" \
 	"initrd_addr=0x43800000\0"		\
+	"initrd_addr_r=0x43800000\0"		\
 	"initrd_high=0xffffffffffffffff\0" \
+	"initrdfile=/boot/initrd.img\0" \
 	"mmcdev="__stringify(CONFIG_SYS_MMC_ENV_DEV)"\0" \
 	"mmcpart=" __stringify(CONFIG_SYS_MMC_IMG_LOAD_PART) "\0" \
 	"mmcroot=" CONFIG_MMCROOT " rootwait rw\0" \
-	"mmcautodetect=yes\0" \
-	"mmcargs=setenv bootargs ${jh_clk} console=${console} root=${mmcroot}\0 " \
-	"loadbootscript=ext4load mmc ${mmcdev}:${mmcpart} ${loadaddr} ${script};\0" \
+	"mmcautodetect=no\0" \
+	"mmcargs=setenv bootargs ${jh_clk} ${datawipe} ${bootopts} "\
+		"console=${console} root=${mmcroot}\0 " \
+	"loadbootscript=ext4load mmc ${mmcdev}:${bootpart} ${loadaddr} ${bsp_script};\0" \
 	"bootscript=echo Running bootscript from mmc ...; " \
 		"source\0" \
-	"loadimage=ext4load mmc ${mmcdev}:${mmcpart} ${loadaddr} ${image}\0" \
-	"loadfdt=ext4load mmc ${mmcdev}:${mmcpart} ${fdt_addr} ${fdt_file}\0" \
+	"loadimage=ext4load mmc ${mmcdev}:${bootpart} ${loadaddr} ${image}\0" \
+	"loadfdt=ext4load mmc ${mmcdev}:${bootpart} ${fdt_addr_r} ${fdtfile}\0" \
+	"loadinitrd=ext4load mmc ${mmcdev}:${bootpart} ${initrd_addr_r} ${initrdfile}\0" \
 	"mmcboot=echo Booting from mmc ...; " \
 		"run mmcargs; " \
 		"if test ${boot_fit} = yes || test ${boot_fit} = try; then " \
 			"bootm ${loadaddr}; " \
 		"else " \
 			"if run loadfdt; then " \
-				"booti ${loadaddr} - ${fdt_addr}; " \
+				"if run loadinitrd; then " \
+					"echo booting with initramfs; " \
+					"booti ${loadaddr} ${initrd_addr_r} ${fdt_addr_r}; " \
+				"else " \
+					"booti ${loadaddr} - ${fdt_addr_r}; " \
+				"fi; " \
 			"else " \
 				"echo WARN: Cannot load the DT; " \
 			"fi; " \
 		"fi;\0" \
+	"usbargs=setenv bootargs ${jh_clk} ${datawipe} ${bootopts} console=${console} " \
+		"root=/dev/sda rootwait rw\0" \
+	"usbboot=echo Booting from USB ...; " \
 	"netargs=setenv bootargs ${jh_clk} console=${console} " \
 		"root=/dev/nfs " \
 		"ip=dhcp nfsroot=${serverip}:${nfsroot},v3,tcp\0" \
@@ -163,15 +209,14 @@
 		"if test ${boot_fit} = yes || test ${boot_fit} = try; then " \
 			"bootm ${loadaddr}; " \
 		"else " \
-			"if ${get_cmd} ${fdt_addr} ${fdt_file}; then " \
-				"booti ${loadaddr} - ${fdt_addr}; " \
+			"if ${get_cmd} ${fdt_addr_r} ${fdtfile}; then " \
+				"booti ${loadaddr} - ${fdt_addr_r}; " \
 			"else " \
 				"echo WARN: Cannot load the DT; " \
 			"fi; " \
-		"fi;\0"
-
-#define CONFIG_BOOTCOMMAND \
-	   "mmc dev ${mmcdev}; if mmc rescan; then " \
+		"fi;\0" \
+	"bsp_bootcmd=echo Running BSP bootcmd ...; " \
+		"mmc dev ${mmcdev}; if mmc rescan; then " \
 		   "if run loadbootscript; then " \
 			   "run bootscript; " \
 		   "else " \
@@ -181,10 +226,9 @@
 			   "fi; " \
 		   "fi; " \
 	   "fi;"
-#endif
 
 /* Link Definitions */
-#define CONFIG_LOADADDR			0x43800000
+#define CONFIG_LOADADDR			0x40480000
 
 #define CONFIG_SYS_LOAD_ADDR		CONFIG_LOADADDR
 
@@ -201,16 +245,10 @@
 #define CONFIG_ENV_SPI_MODE		CONFIG_SF_DEFAULT_MODE
 #define CONFIG_ENV_SPI_MAX_HZ		CONFIG_SF_DEFAULT_SPEED
 
-/* Totally 6GB DDR */
+/* Totally 2GB DDR */
 #define CONFIG_SYS_SDRAM_BASE		0x40000000
 #define PHYS_SDRAM			0x40000000
-#define PHYS_SDRAM_SIZE			0xC0000000	/* 3 GB */
-#define PHYS_SDRAM_2			0x100000000
-#ifdef CONFIG_TARGET_IMX8MP_DDR4_EVK
-#define PHYS_SDRAM_2_SIZE		0x40000000	/* 1 GB */
-#else
-#define PHYS_SDRAM_2_SIZE		0xC0000000	/* 3 GB */
-#endif
+#define PHYS_SDRAM_SIZE			0x80000000	/* 2 GB */
 
 #define CONFIG_SYS_MEMTEST_START	0x60000000
 #define CONFIG_SYS_MEMTEST_END		(CONFIG_SYS_MEMTEST_START + \
@@ -229,13 +267,8 @@
 #define CONFIG_IMX_BOOTAUX
 #define CONFIG_FSL_USDHC
 
-#ifdef CONFIG_TARGET_IMX8MP_DDR4_EVK
-#define CONFIG_SYS_FSL_USDHC_NUM	1
-#else
 #define CONFIG_SYS_FSL_USDHC_NUM	2
-#endif
 #define CONFIG_SYS_FSL_ESDHC_ADDR	0
-
 #define CONFIG_SYS_MMC_IMG_LOAD_PART	1
 
 #ifdef CONFIG_FSL_FSPI
@@ -248,27 +281,19 @@
 #define CONFIG_SYS_FSL_FSPI_AHB
 #endif
 
-#ifdef CONFIG_NAND_MXS
-#define CONFIG_CMD_NAND_TRIMFFS
-
-/* NAND stuff */
-#define CONFIG_SYS_MAX_NAND_DEVICE     1
-#define CONFIG_SYS_NAND_BASE           0x20000000
-#define CONFIG_SYS_NAND_5_ADDR_CYCLE
-#define CONFIG_SYS_NAND_ONFI_DETECTION
-#define CONFIG_SYS_NAND_USE_FLASH_BBT
-#endif /* CONFIG_NAND_MXS */
-
 #define CONFIG_SYS_I2C_SPEED		100000
 
 /* USB configs */
 #ifndef CONFIG_SPL_BUILD
-#define CONFIG_CMD_USB
-#define CONFIG_USB_STORAGE
-
 #define CONFIG_CMD_USB_MASS_STORAGE
 #define CONFIG_USB_GADGET_MASS_STORAGE
 #define CONFIG_USB_FUNCTION_MASS_STORAGE
+#else
+#undef CONFIG_CMD_USB
+#undef CONFIG_USB_STORAGE
+#undef CONFIG_CMD_USB_MASS_STORAGE
+#undef CONFIG_USB_GADGET_MASS_STORAGE
+#undef CONFIG_USB_FUNCTION_MASS_STORAGE
 #endif
 
 #define CONFIG_USB_MAX_CONTROLLER_COUNT         2
@@ -285,10 +310,6 @@
 #define CONFIG_BMP_32BPP
 #define CONFIG_VIDEO_BMP_RLE8
 #define CONFIG_VIDEO_BMP_LOGO
-#endif
-
-#ifdef CONFIG_ANDROID_SUPPORT
-#include "imx8mp_evk_android.h"
 #endif
 
 #endif

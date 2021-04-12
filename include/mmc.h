@@ -178,6 +178,7 @@ static inline bool mmc_is_tuning_cmd(uint cmdidx)
 #define MMC_STATUS_ERROR	(1 << 19)
 
 #define MMC_STATE_PRG		(7 << 9)
+#define MMC_STATE_TRANS		(4 << 9)
 
 #define MMC_VDD_165_195		0x00000080	/* VDD voltage 1.65 - 1.95 */
 #define MMC_VDD_20_21		0x00000100	/* VDD voltage 2.0 ~ 2.1 */
@@ -224,7 +225,9 @@ static inline bool mmc_is_tuning_cmd(uint cmdidx)
 #define EXT_CSD_WR_REL_PARAM		166	/* R */
 #define EXT_CSD_WR_REL_SET		167	/* R/W */
 #define EXT_CSD_RPMB_MULT		168	/* RO */
+#define EXT_CSD_USER_WP			171	/* R/W & R/W/C_P & R/W/E_P */
 #define EXT_CSD_BOOT_WP			173	/* R/W & R/W/C_P */
+#define EXT_CSD_BOOT_WP_STATUS		174	/* R */
 #define EXT_CSD_ERASE_GROUP_DEF		175	/* R/W */
 #define EXT_CSD_BOOT_BUS_WIDTH		177
 #define EXT_CSD_PART_CONF		179	/* R/W */
@@ -944,6 +947,26 @@ int mmc_map_to_kernel_blk(int dev_no);
  * @return block device if found, else NULL
  */
 struct blk_desc *mmc_get_blk_desc(struct mmc *mmc);
+
+/**
+ * mmc_send_ext_csd() - read the extended CSD register
+ *
+ * @mmc:	MMC device
+ * @ext_csd	a cache aligned buffer of length MMC_MAX_BLOCK_LEN allocated by
+ *		the caller, e.g. using
+ *		ALLOC_CACHE_ALIGN_BUFFER(u8, ext_csd, MMC_MAX_BLOCK_LEN)
+ * Return:	0 for success
+ */
+int mmc_send_ext_csd(struct mmc *mmc, u8 *ext_csd);
+
+/**
+ * mmc_boot_wp() - power on write protect boot partitions
+ *
+ * The boot partitions are write protected until the next power cycle.
+ *
+ * Return:	0 for success
+ */
+int mmc_boot_wp(struct mmc *mmc);
 
 static inline enum dma_data_direction mmc_get_dma_dir(struct mmc_data *data)
 {

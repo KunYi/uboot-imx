@@ -7,6 +7,7 @@
 #include <common.h>
 #include <command.h>
 #include <console.h>
+#include <memalign.h>
 #include <mmc.h>
 #include <sparse_format.h>
 #include <image-sparse.h>
@@ -54,6 +55,9 @@ static void print_mmcinfo(struct mmc *mmc)
 	if (!IS_SD(mmc) && mmc->version >= MMC_VERSION_4_41) {
 		bool has_enh = (mmc->part_support & ENHNCD_SUPPORT) != 0;
 		bool usr_enh = has_enh && (mmc->part_attr & EXT_CSD_ENH_USR);
+		ALLOC_CACHE_ALIGN_BUFFER(u8, ext_csd, MMC_MAX_BLOCK_LEN);
+		u8 wp;
+		int ret;
 
 #if CONFIG_IS_ENABLED(MMC_HW_PARTITIONING)
 		puts("HC WP Group Size: ");
@@ -89,6 +93,28 @@ static void print_mmcinfo(struct mmc *mmc)
 				else
 					putc('\n');
 			}
+		}
+		ret = mmc_send_ext_csd(mmc, ext_csd);
+		if (ret)
+			return;
+		wp = ext_csd[EXT_CSD_BOOT_WP_STATUS];
+		for (i = 0; i < 2; ++i) {
+			printf("Boot area %d is ", i);
+			switch (wp & 3) {
+			case 0:
+				printf("not write protected\n");
+				break;
+			case 1:
+				printf("power on protected\n");
+				break;
+			case 2:
+				printf("permanently protected\n");
+				break;
+			default:
+				printf("in reserved protection state\n");
+				break;
+			}
+			wp >>= 2;
 		}
 	}
 }
@@ -872,9 +898,30 @@ static int do_mmc_bkops_enable(cmd_tbl_t *cmdtp, int flag,
 }
 #endif
 
+static int do_mmc_boot_wp(cmd_tbl_t *cmdtp, int flag,
+			  int argc, char * const argv[])
+{
+	int err;
+	struct mmc *mmc;
+
+	mmc = init_mmc_device(curr_device, false);
+	if (!mmc)
+		return CMD_RET_FAILURE;
+	if (IS_SD(mmc)) {
+		printf("It is not an eMMC device\n");
+		return CMD_RET_FAILURE;
+	}
+	err = mmc_boot_wp(mmc);
+	if (err)
+		return CMD_RET_FAILURE;
+	printf("boot areas protected\n");
+	return CMD_RET_SUCCESS;
+}
+
 static cmd_tbl_t cmd_mmc[] = {
 	U_BOOT_CMD_MKENT(info, 1, 0, do_mmcinfo, "", ""),
 	U_BOOT_CMD_MKENT(read, 4, 1, do_mmc_read, "", ""),
+	U_BOOT_CMD_MKENT(wp, 1, 0, do_mmc_boot_wp, "", ""),
 #if CONFIG_IS_ENABLED(MMC_WRITE)
 	U_BOOT_CMD_MKENT(write, 4, 0, do_mmc_write, "", ""),
 	U_BOOT_CMD_MKENT(erase, 3, 0, do_mmc_erase, "", ""),
@@ -944,6 +991,7 @@ U_BOOT_CMD(
 	"mmc part - lists available partition on current mmc device\n"
 	"mmc dev [dev] [part] - show or set current mmc device [partition]\n"
 	"mmc list - lists available devices\n"
+	"mmc wp - power on write protect boot partitions\n"
 #if CONFIG_IS_ENABLED(MMC_HW_PARTITIONING)
 	"mmc hwpartition [args...] - does hardware partitioning\n"
 	"  arguments (sizes in 512-byte blocks):\n"
@@ -954,13 +1002,13 @@ U_BOOT_CMD(
 	"  Power cycling is required to initialize partitions after set to complete.\n"
 #endif
 #ifdef CONFIG_SUPPORT_EMMC_BOOT
-	"mmc bootbus dev boot_bus_width reset_boot_bus_width boot_mode\n"
+	"mmc bootbus <dev> <boot_bus_width> <reset_boot_bus_width> <boot_mode>\n"
 	" - Set the BOOT_BUS_WIDTH field of the specified device\n"
 	"mmc bootpart-resize <dev> <boot part size MB> <RPMB part size MB>\n"
 	" - Change sizes of boot and RPMB partitions of specified device\n"
-	"mmc partconf dev [boot_ack boot_partition partition_access]\n"
+	"mmc partconf <dev> [boot_ack boot_partition partition_access]\n"
 	" - Show or change the bits of the PARTITION_CONFIG field of the specified device\n"
-	"mmc rst-function dev value\n"
+	"mmc rst-function <dev> <value>\n"
 	" - Change the RST_n_FUNCTION field of the specified device\n"
 	"   WARNING: This is a write-once field and 0 / 1 / 2 are the only valid values.\n"
 #endif
