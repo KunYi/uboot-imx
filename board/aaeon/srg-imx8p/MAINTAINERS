@@ -1,0 +1,6 @@
+AAEON SRG-IMX8P IoT Gateway
+M:	KunYi Chen <kunyi.chen@gmail.com>
+S:	Maintained
+F:	board/aaeon/srg-imx8p/
+F:	include/configs/srg-imx8p.h
+F:	configs/srg-imx8p_defconfig

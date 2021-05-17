@@ -30,7 +30,7 @@ config SYS_SOC
 config SECONDARY_BOOT_SECTOR_OFFSET
 	hex "SD/MMC sector offset used for ROM secondary boot"
 	default 0x0
-	depends on IMX8MQ || IMX8MM
+	depends on IMX8MQ || IMX8MM || IMX8MP
 	help
 	  Set the sector offset to non-zero value in SPL used for
 	  secondary boot image. This value should be same as the
@@ -154,8 +154,15 @@ config TARGET_VERDIN_IMX8MM
        select SUPPORT_SPL
        select IMX8M_LPDDR4
 
+config TARGET_SRG_IMX8P
+       bool "Support AAEON SRG-iMX8MPlus Gateway"
+       select IMX8MP
+       select SUPPORT_SPL
+       select IMX8M_LPDDR4
+
 endchoice
 
+source "board/aaeon/srg-imx8p/Kconfig"
 source "board/freescale/imx8mq_evk/Kconfig"
 source "board/freescale/imx8mq_val/Kconfig"
 source "board/freescale/imx8mm_ab2/Kconfig"
