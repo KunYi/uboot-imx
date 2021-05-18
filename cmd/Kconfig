@@ -399,6 +399,7 @@ config CMD_ABOOTIMG
 config CMD_ELF
 	bool "bootelf, bootvx"
 	default y
+	select LIB_ELF
 	help
 	  Boot an ELF/vxWorks image from the memory.
 
@@ -778,11 +779,13 @@ config CMD_LZMADEC
 config CMD_UNZIP
 	bool "unzip"
 	default y if CMD_BOOTI
+	select GZIP
 	help
 	  Uncompress a zip-compressed memory region.
 
 config CMD_ZIP
 	bool "zip"
+	select GZIP_COMPRESSED
 	help
 	  Compress a memory region with zlib deflate method.
 
@@ -799,7 +802,7 @@ config CMD_ARMFLASH
 config CMD_ADC
 	bool "adc - Access Analog to Digital Converters info and data"
 	select ADC
-	select DM_REGULATOR
+	depends on DM_REGULATOR
 	help
 	  Shows ADC device info and permit printing one-shot analog converted
 	  data from a named Analog to Digital Converter.
@@ -2008,6 +2011,12 @@ config CMD_FAT
 	select FS_FAT
 	help
 	  Support for the FAT fs
+
+config CMD_SQUASHFS
+	bool "SquashFS command support"
+	select FS_SQUASHFS
+	help
+	  Enables SquashFS filesystem commands (e.g. load, ls).
 
 config CMD_FS_GENERIC
 	bool "filesystem commands"
