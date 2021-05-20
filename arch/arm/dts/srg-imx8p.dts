@@ -9,7 +9,7 @@
 #include "imx8mp.dtsi"
 
 / {
-	model = "AAEON SRG-i.MX8P IoT Gateway";
+	model = "AAEON SRG-IMX8P IoT Gateway";
 	compatible = "aaeon,srg-imx8p", "fsl,imx8mp-evk", "fsl,imx8mp";
 
 	chosen {
@@ -70,6 +70,26 @@
 			rm67191_from_dsim: endpoint {
 				remote-endpoint = <&dsim_to_rm67191>;
 			};
+		};
+	};
+	/* TPM */
+	soft-spi {
+		compatible = "spi-gpio";
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_ecspi2_gpio>;
+		cs-gpios = <&gpio5 13 0>;
+		gpio-sck = <&gpio5 10 0>;
+		gpio-mosi = <&gpio5 11 0>;
+		gpio-miso = <&gpio5 12 0>;
+		spi-delay-us = <1>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		tpm2:npct750@0 {
+			reg = <0>;
+			compatible = "tis,tpm2-spi";
+			spi-max-frequency = <1000000>;
+			gpio-reset = <&gpio1 15 GPIO_ACTIVE_LOW>;
 		};
 	};
 };
@@ -279,13 +299,6 @@
 	scl-gpios = <&gpio5 18 GPIO_ACTIVE_HIGH>;
 	sda-gpios = <&gpio5 19 GPIO_ACTIVE_HIGH>;
 	status = "okay";
-
-	pca6416: gpio@20 {
-		compatible = "ti,tca6416";
-		reg = <0x20>;
-		gpio-controller;
-		#gpio-cells = <2>;
-	};
 };
 
 &lcdif1 {
@@ -384,6 +397,7 @@
 			MX8MP_IOMUXC_ENET_TD3__ENET_QOS_RGMII_TD3		0x1f
 			MX8MP_IOMUXC_ENET_TX_CTL__ENET_QOS_RGMII_TX_CTL	0x1f
 			MX8MP_IOMUXC_ENET_TXC__CCM_ENET_QOS_CLOCK_GENERATE_TX_CLK	0x1f
+			/* Reset for Eth0 */
 			MX8MP_IOMUXC_SAI2_RXC__GPIO4_IO22		0x19
 		>;
 	};
@@ -404,6 +418,7 @@
 			MX8MP_IOMUXC_SAI1_TXD3__ENET1_RGMII_TD3		0x1f
 			MX8MP_IOMUXC_SAI1_TXD4__ENET1_RGMII_TX_CTL	0x1f
 			MX8MP_IOMUXC_SAI1_TXD5__ENET1_RGMII_TXC		0x1f
+			/* Reset for Eth1 */
 			MX8MP_IOMUXC_SAI1_RXD0__GPIO4_IO02		0x19
 		>;
 	};
@@ -591,6 +606,16 @@
 	pinctrl_wdog: wdoggrp {
 		fsl,pins = <
 			MX8MP_IOMUXC_GPIO1_IO02__WDOG1_WDOG_B	0xc6
+		>;
+	};
+
+	pinctrl_ecspi2_gpio: ecspi2_gpio {
+		fsl,pin = <
+			MX8MP_IOMUXC_ECSPI2_SCLK__GPIO5_IO10	0x146
+			MX8MP_IOMUXC_ECSPI2_MOSI__GPIO5_IO11	0x146
+			MX8MP_IOMUXC_ECSPI2_MISO__GPIO5_IO12	0x146
+			MX8MP_IOMUXC_ECSPI2_SS0__GPIO5_IO13	0x146
+			MX8MP_IOMUXC_GPIO1_IO15__GPIO1_IO15	0x046
 		>;
 	};
 };

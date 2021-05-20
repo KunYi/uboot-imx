@@ -97,32 +97,24 @@
 	"emmc_dev=2\0"\
 	"sd_dev=1\0" \
 
-
-#ifdef CONFIG_NAND_BOOT
-#define MFG_NAND_PARTITION "mtdparts=gpmi-nand:64m(nandboot),16m(nandfit),32m(nandkernel),16m(nanddtb),8m(nandtee),-(nandrootfs)"
-#endif
-
 /* Initial environment variables */
-#if defined(CONFIG_NAND_BOOT)
-#define CONFIG_EXTRA_ENV_SETTINGS \
-	CONFIG_MFG_ENV_SETTINGS \
-	"splashimage=0x50000000\0" \
-	"fdt_addr=0x43000000\0"			\
-	"fdt_high=0xffffffffffffffff\0" \
-	"mtdparts=" MFG_NAND_PARTITION "\0" \
-	"console=ttymxc1,115200 earlycon=ec_imx6q,0x30890000,115200\0" \
-	"bootargs=console=ttymxc1,115200 earlycon=ec_imx6q,0x30890000,115200 ubi.mtd=nandrootfs "  \
-		"root=ubi0:nandrootfs rootfstype=ubifs "		     \
-		MFG_NAND_PARTITION \
-		"\0" \
-	"bootcmd=nand read ${loadaddr} 0x5000000 0x2000000;"\
-		"nand read ${fdt_addr} 0x7000000 0x100000;"\
-		"booti ${loadaddr} - ${fdt_addr}"
+#define FALLBACK_BOOTCOUNT_ENV \
+	"bootlimit=4\0" \
+	"bootfallback=echo Fallback to previous RootFS; " \
+		"if test ${bootpart} = 1; then " \
+		"	setenv bootpart 2; " \
+		"else " \
+		"	setenv bootpart 1; " \
+		"fi; " \
+		"setenv mmcroot /dev/mmcblk2p${bootpart} rootwait rw; " \
+		"setenv upgrade_available 0; setenv bootcount 0; saveenv;\0" \
+	"altbootcmd=run bootballback; " \
+		"run bootcmd;\0" \
 
-#else
 #define CONFIG_EXTRA_ENV_SETTINGS		\
 	CONFIG_MFG_ENV_SETTINGS \
 	JAILHOUSE_ENV \
+	FALLBACK_BOOTCOUNT_ENV \
 	"loadprefix=/boot/\0" \
 	"script=/boot/boot.scr\0" \
 	"image=/boot/fitImage-initramfs.bin\0" \
@@ -188,7 +180,6 @@
 			   "fi; " \
 		   "fi; " \
 	   "fi;"
-#endif
 
 /* Link Definitions */
 #define CONFIG_LOADADDR			0x43800000

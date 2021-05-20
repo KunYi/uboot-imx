@@ -9,4 +9,11 @@ config SYS_VENDOR
 config SYS_CONFIG_NAME
 	default "srg-imx8p"
 
+config SYS_BOARD_NAME
+	string "for board name"
+	default "SRG-IMX8P"
+
+config SYS_BOARD_REV
+	string "for board revision"
+	default "EVK"
 endif

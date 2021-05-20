@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0+
 /*
- * Copyright 2021 UWINGS
+ * Copyright 2021 Sparktech
+ * Copyright 2021 UWings
  *
  * Copyright 2019 NXP
  *
@@ -220,7 +221,9 @@ static void dwc3_nxp_usb_phy_init(struct dwc3_device *dwc3)
 #endif
 
 #if defined(CONFIG_USB_DWC3) || defined(CONFIG_USB_XHCI_IMX8M)
-#define USB2_PWR_EN IMX_GPIO_NR(1, 14)
+#define USB1_PWR_EN IMX_GPIO_NR(1, 5)
+#define USB2_PWR_EN IMX_GPIO_NR(1, 6)
+
 int board_usb_init(int index, enum usb_init_type init)
 {
 	int ret = 0;
@@ -232,9 +235,11 @@ int board_usb_init(int index, enum usb_init_type init)
 	} else if (index == 0 && init == USB_INIT_HOST) {
 		return ret;
 	} else if (index == 1 && init == USB_INIT_HOST) {
-		/* Enable GPIO1_IO14 for 5V VBUS */
+		/* Enable GPIO1_IO05 for 5V VBUS */
 		gpio_request(USB2_PWR_EN, "usb2_pwr");
 		gpio_direction_output(USB2_PWR_EN, 1);
+		gpio_request(USB1_PWR_EN, "usb1_pwr");
+		gpio_direction_output(USB1_PWR_EN, 1);
 	}
 
 	return 0;
@@ -248,8 +253,9 @@ int board_usb_cleanup(int index, enum usb_init_type init)
 	} else if (index == 0 && init == USB_INIT_HOST) {
 
 	} else if (index == 1 && init == USB_INIT_HOST) {
-		/* Disable GPIO1_IO14 for 5V VBUS */
+		/* Disable GPIO1_IO05 for 5V VBUS */
 		gpio_direction_output(USB2_PWR_EN, 0);
+		gpio_direction_output(USB1_PWR_EN, 0);
 	}
 
 	imx8m_usb_power(index, false);
@@ -266,9 +272,6 @@ int board_usb_cleanup(int index, enum usb_init_type init)
 
 int board_init(void)
 {
-#ifdef CONFIG_USB_TCPC
-	setup_typec();
-#endif
 
 #ifdef CONFIG_FEC_MXC
 	setup_fec();
@@ -277,10 +280,6 @@ int board_init(void)
 #ifdef CONFIG_DWC_ETH_QOS
 	/* clock, pin, gpr */
 	setup_eqos();
-#endif
-
-#ifdef CONFIG_NAND_MXS
-	setup_gpmi_nand();
 #endif
 
 #if defined(CONFIG_USB_DWC3) || defined(CONFIG_USB_XHCI_IMX8M)
@@ -300,8 +299,8 @@ int board_late_init(void)
 	board_late_mmc_env_init();
 #endif
 #ifdef CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG
-	env_set("board_name", "EVK");
-	env_set("board_rev", "iMX8MP");
+	env_set("board_name", CONFIG_SYS_BOARD_NAME);
+	env_set("board_rev", CONFIG_SYS_BOARD_REV);
 #endif
 
 	return 0;
