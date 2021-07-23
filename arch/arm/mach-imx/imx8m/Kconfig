@@ -201,6 +201,13 @@ config TARGET_PHYCORE_IMX8MP
 	select IMX8MP
         select SUPPORT_SPL
 	select IMX8M_LPDDR4
+
+config TARGET_SRG_IMX8P
+        bool "AAEON SRG-iMX8MPlus Gateway"
+        select IMX8MP
+        select SUPPORT_SPL
+        select IMX8M_LPDDR4
+
 endchoice
 
 source "board/freescale/imx8mq_evk/Kconfig"
@@ -217,5 +224,6 @@ source "board/beacon/imx8mm/Kconfig"
 source "board/beacon/imx8mn/Kconfig"
 source "board/phytec/phycore_imx8mm/Kconfig"
 source "board/phytec/phycore_imx8mp/Kconfig"
+source "board/aaeon/srg-imx8p/Kconfig"
 
 endif

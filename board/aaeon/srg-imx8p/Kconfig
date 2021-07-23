@@ -1,0 +1,19 @@
+if TARGET_SRG_IMX8P
+
+config SYS_BOARD
+	default "srg-imx8p"
+
+config SYS_VENDOR
+	default "aaeon"
+
+config SYS_CONFIG_NAME
+	default "srg-imx8p"
+
+config SYS_BOARD_NAME
+	string "for board name"
+	default "SRG-IMX8P"
+
+config SYS_BOARD_REV
+	string "for board revision"
+	default "EVK"
+endif
