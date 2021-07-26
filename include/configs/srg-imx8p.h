@@ -78,17 +78,27 @@
 #endif
 
 #define PHY_ANEG_TIMEOUT 20000
+#endif
 
+#ifdef CONFIG_DISTRO_DEFAULTS
+#define BOOT_TARGET_DEVICES(func) \
+	func(USB, usb, 0) \
+	func(MMC, mmc, 1) \
+	func(MMC, mmc, 2)
+
+#include <config_distro_bootcmd.h>
+#else
+#define BOOTENV
 #endif
 
 #define JAILHOUSE_ENV \
 	"jh_clk= \0 " \
-	"jh_mmcboot=setenv fdt_file imx8mp-evk-root.dtb;" \
-		"setenv jh_clk clk_ignore_unused; " \
+	"jh_mmcboot=setenv fdt_file srg-imx8p-root.dtb;;" \
+		"setenv jh_clk clk_ignore_unused; mem=2048MB;" \
 			   "if run loadimage; then " \
 				   "run mmcboot; " \
 			   "else run jh_netboot; fi; \0" \
-	"jh_netboot=setenv fdt_file imx8mp-evk-root.dtb; setenv jh_clk clk_ignore_unused; run netboot; \0 "
+	"jh_netboot=setenv fdt_file srg-imx8p-root.dtb;; setenv jh_clk clk_ignore_unused; mem=2048MB; run netboot; \0 "
 
 #define CONFIG_MFG_ENV_SETTINGS \
 	CONFIG_MFG_ENV_SETTINGS_DEFAULT \
@@ -115,16 +125,21 @@
 	CONFIG_MFG_ENV_SETTINGS \
 	JAILHOUSE_ENV \
 	FALLBACK_BOOTCOUNT_ENV \
-	"loadprefix=/boot/\0" \
+	BOOTENV \
 	"script=/boot/boot.scr\0" \
-	"image=/boot/fitImage-initramfs.bin\0" \
+	"kernel_addr_r=" __stringify(CONFIG_LOADADDR) "\0" \
+	"bsp_script=/boot/boot.scr\0" \
+	"image=/boot/Image\0" \
 	"splashimage=0x50000000\0" \
 	"console=ttymxc1,115200\0" \
+	"fdt_addr_r=0x43000000\0"			\
 	"fdt_addr=0x43000000\0"			\
-	"fdt_high=0xffffffffffffffff\0"		\
-	"boot_fit=try\0" \
+	"boot_fdt=try\0" \
 	"bootpart=1\0" \
-	"fdt_file=/boot/" CONFIG_DEFAULT_FDT_FILE "\0" \
+	"fdt_high=0xffffffffffffffff\0"		\
+	"boot_fit=no\0" \
+	"fdtfile=" CONFIG_DEFAULT_FDT_FILE "\0" \
+	"bootm_size=0x10000000\0" \
 	"initrd_addr=0x43800000\0"		\
 	"initrd_high=0xffffffffffffffff\0" \
 	"mmcdev="__stringify(CONFIG_SYS_MMC_ENV_DEV)"\0" \
@@ -132,18 +147,19 @@
 	"mmcroot=" CONFIG_MMCROOT " rootwait rw\0" \
 	"mmcautodetect=yes\0" \
 	"mmcargs=setenv bootargs ${jh_clk} console=${console} root=${mmcroot}\0 " \
-	"loadbootscript=ext4load mmc ${mmcdev}:${mmcpart} ${loadaddr} ${script};\0" \
+	"loadbootscript=ext4load mmc ${mmcdev}:${bootpart} ${loadaddr} ${bsp_script};\0" \
 	"bootscript=echo Running bootscript from mmc ...; " \
 		"source\0" \
-	"loadimage=ext4load mmc ${mmcdev}:${mmcpart} ${loadaddr} ${image}\0" \
-	"loadfdt=ext4load mmc ${mmcdev}:${mmcpart} ${fdt_addr} ${fdt_file}\0" \
+	"loadimage=ext4load mmc ${mmcdev}:${bootpart} ${loadaddr} ${image}\0" \
+	"loadfdt=ext4load mmc ${mmcdev}:${bootpart} ${fdt_addr_r} ${fdtfile}\0" \
+	"loadinitrd=ext4load mmc ${mmcdev}:${bootpart} ${initrd_addr} ${initrdfile}\0" \
 	"mmcboot=echo Booting from mmc ...; " \
 		"run mmcargs; " \
 		"if test ${boot_fit} = yes || test ${boot_fit} = try; then " \
 			"bootm ${loadaddr}; " \
 		"else " \
 			"if run loadfdt; then " \
-				"booti ${loadaddr} - ${fdt_addr}; " \
+				"booti ${loadaddr} - ${fdt_addr_r}; " \
 			"else " \
 				"echo WARN: Cannot load the DT; " \
 			"fi; " \
@@ -162,15 +178,14 @@
 		"if test ${boot_fit} = yes || test ${boot_fit} = try; then " \
 			"bootm ${loadaddr}; " \
 		"else " \
-			"if ${get_cmd} ${fdt_addr} ${fdt_file}; then " \
-				"booti ${loadaddr} - ${fdt_addr}; " \
+			"if ${get_cmd} ${fdt_addr_r} ${fdtfile}; then " \
+				"booti ${loadaddr} - ${fdt_addr_r}; " \
 			"else " \
 				"echo WARN: Cannot load the DT; " \
 			"fi; " \
-		"fi;\0"
-
-#define CONFIG_BOOTCOMMAND \
-	   "mmc dev ${mmcdev}; if mmc rescan; then " \
+		"fi;\0" \
+	"bsp_bootcmd=echo Running BSP bootcmd ...; " \
+		"mmc dev ${mmcdev}; if mmc rescan; then " \
 		   "if run loadbootscript; then " \
 			   "run bootscript; " \
 		   "else " \
@@ -182,7 +197,7 @@
 	   "fi;"
 
 /* Link Definitions */
-#define CONFIG_LOADADDR			0x43800000
+#define CONFIG_LOADADDR			0x40480000
 
 #define CONFIG_SYS_LOAD_ADDR		CONFIG_LOADADDR
 
@@ -220,9 +235,9 @@
 
 #define CONFIG_IMX_BOOTAUX
 #define CONFIG_FSL_USDHC
+
 #define CONFIG_SYS_FSL_USDHC_NUM	2
 #define CONFIG_SYS_FSL_ESDHC_ADDR	0
-
 #define CONFIG_SYS_MMC_IMG_LOAD_PART	1
 
 #ifdef CONFIG_FSL_FSPI
@@ -239,12 +254,15 @@
 
 /* USB configs */
 #ifndef CONFIG_SPL_BUILD
-#define CONFIG_CMD_USB
-#define CONFIG_USB_STORAGE
-
 #define CONFIG_CMD_USB_MASS_STORAGE
 #define CONFIG_USB_GADGET_MASS_STORAGE
 #define CONFIG_USB_FUNCTION_MASS_STORAGE
+#else
+#undef CONFIG_CMD_USB
+#undef CONFIG_USB_STORAGE
+#undef CONFIG_CMD_USB_MASS_STORAGE
+#undef CONFIG_USB_GADGET_MASS_STORAGE
+#undef CONFIG_USB_FUNCTION_MASS_STORAGE
 #endif
 
 #define CONFIG_USB_MAX_CONTROLLER_COUNT         2

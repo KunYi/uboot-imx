@@ -237,9 +237,9 @@ int board_usb_init(int index, enum usb_init_type init)
 	} else if (index == 1 && init == USB_INIT_HOST) {
 		/* Enable GPIO1_IO05 for 5V VBUS */
 		gpio_request(USB2_PWR_EN, "usb2_pwr");
-		gpio_direction_output(USB2_PWR_EN, 1);
+		gpio_direction_output(USB2_PWR_EN, 0);
 		gpio_request(USB1_PWR_EN, "usb1_pwr");
-		gpio_direction_output(USB1_PWR_EN, 1);
+		gpio_direction_output(USB1_PWR_EN, 0);
 	}
 
 	return 0;
@@ -254,8 +254,8 @@ int board_usb_cleanup(int index, enum usb_init_type init)
 
 	} else if (index == 1 && init == USB_INIT_HOST) {
 		/* Disable GPIO1_IO05 for 5V VBUS */
-		gpio_direction_output(USB2_PWR_EN, 0);
-		gpio_direction_output(USB1_PWR_EN, 0);
+		gpio_direction_output(USB2_PWR_EN, 1);
+		gpio_direction_output(USB1_PWR_EN, 1);
 	}
 
 	imx8m_usb_power(index, false);
@@ -264,6 +264,16 @@ int board_usb_cleanup(int index, enum usb_init_type init)
 }
 
 #endif
+
+#define TPM_RST IMX_GPIO_NR(1, 15)
+void setup_tpm(void)
+{
+	gpio_request(TPM_RST, "tpm_rst");
+	gpio_direction_output(TPM_RST, 0);
+	mdelay(15);
+	gpio_direction_output(TPM_RST, 1);
+	mdelay(100);
+}
 
 #define FSL_SIP_GPC			0xC2000000
 #define FSL_SIP_CONFIG_GPC_PM_DOMAIN	0x3
@@ -286,6 +296,9 @@ int board_init(void)
 	init_usb_clk();
 #endif
 
+#ifdef CONFIG_TPM
+	setup_tpm();
+#endif
 	/* enable the dispmix & mipi phy power domain */
 	call_imx_sip(FSL_SIP_GPC, FSL_SIP_CONFIG_GPC_PM_DOMAIN, DISPMIX, true, 0);
 	call_imx_sip(FSL_SIP_GPC, FSL_SIP_CONFIG_GPC_PM_DOMAIN, MIPI, true, 0);
