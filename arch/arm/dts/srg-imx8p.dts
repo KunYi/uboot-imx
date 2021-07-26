@@ -610,7 +610,7 @@
 	};
 
 	pinctrl_ecspi2_gpio: ecspi2_gpio {
-		fsl,pin = <
+		fsl,pins = <
 			MX8MP_IOMUXC_ECSPI2_SCLK__GPIO5_IO10	0x146
 			MX8MP_IOMUXC_ECSPI2_MOSI__GPIO5_IO11	0x146
 			MX8MP_IOMUXC_ECSPI2_MISO__GPIO5_IO12	0x146
