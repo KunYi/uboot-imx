@@ -84,8 +84,9 @@
 #ifdef CONFIG_DISTRO_DEFAULTS
 #define BOOT_TARGET_DEVICES(func) \
 	func(USB, usb, 0) \
+	func(MMC, mmc, 2) \
 	func(MMC, mmc, 1) \
-	func(MMC, mmc, 2)
+
 
 #include <config_distro_bootcmd.h>
 #else
@@ -142,7 +143,9 @@
 	"fdtfile=" CONFIG_DEFAULT_FDT_FILE "\0" \
 	"bootm_size=0x10000000\0" \
 	"initrd_addr=0x43800000\0"		\
+	"initrd_addr_r=0x43800000\0"		\
 	"initrd_high=0xffffffffffffffff\0" \
+	"initrdfile=/boot/initrd.img\0" \
 	"mmcdev="__stringify(CONFIG_SYS_MMC_ENV_DEV)"\0" \
 	"mmcpart=" __stringify(CONFIG_SYS_MMC_IMG_LOAD_PART) "\0" \
 	"mmcroot=" CONFIG_MMCROOT " rootwait rw\0" \
@@ -153,18 +156,26 @@
 		"source\0" \
 	"loadimage=ext4load mmc ${mmcdev}:${bootpart} ${loadaddr} ${image}\0" \
 	"loadfdt=ext4load mmc ${mmcdev}:${bootpart} ${fdt_addr_r} ${fdtfile}\0" \
-	"loadinitrd=ext4load mmc ${mmcdev}:${bootpart} ${initrd_addr} ${initrdfile}\0" \
+	"loadinitrd=ext4load mmc ${mmcdev}:${bootpart} ${initrd_addr_r} ${initrdfile}\0" \
 	"mmcboot=echo Booting from mmc ...; " \
 		"run mmcargs; " \
 		"if test ${boot_fit} = yes || test ${boot_fit} = try; then " \
 			"bootm ${loadaddr}; " \
 		"else " \
 			"if run loadfdt; then " \
-				"booti ${loadaddr} - ${fdt_addr_r}; " \
+				"if run loadinitrd; then " \
+					"echo booting with initramfs; " \
+					"booti ${loadaddr} ${initrd_addr_r} ${fdt_addr_r}; " \
+				"else " \
+					"booti ${loadaddr} - ${fdt_addr_r}; " \
+				"fi; " \
 			"else " \
 				"echo WARN: Cannot load the DT; " \
 			"fi; " \
 		"fi;\0" \
+	"usbargs=setenv bootargs ${jh_clk} console=${console} " \
+		"root=/dev/sda\0" \
+	"usbboot=echo Booting from USB ...; " \
 	"netargs=setenv bootargs ${jh_clk} console=${console} " \
 		"root=/dev/nfs " \
 		"ip=dhcp nfsroot=${serverip}:${nfsroot},v3,tcp\0" \
