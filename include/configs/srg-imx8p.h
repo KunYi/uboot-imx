@@ -78,14 +78,15 @@
 #endif
 
 #define PHY_ANEG_TIMEOUT 20000
+#define CONFIG_NET_RANDOM_ETHADDR
 //#define CONFIG_RTL8211F_PHY_FORCE_EEE_RXC_ON
 #endif
 
 #ifdef CONFIG_DISTRO_DEFAULTS
 #define BOOT_TARGET_DEVICES(func) \
 	func(USB, usb, 0) \
-	func(MMC, mmc, 2) \
 	func(MMC, mmc, 1) \
+	func(MMC, mmc, 2) \
 
 
 #include <config_distro_bootcmd.h>
