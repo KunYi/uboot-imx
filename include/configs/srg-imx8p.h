@@ -84,6 +84,7 @@
 #define BOOTENV_DEV_LEGACY_MMC(devtypeu, devtypel, instance) \
 	"bootcmd_" #devtypel #instance "=" \
 	"setenv mmcdev " #instance"; " \
+	"setenv mmcroot /dev/mmcblk" #instance"p${bootpart} rootwait rw; " \
 	"if run loadbootscript; then " \
 		"run bootscript; " \
 	"else " \
@@ -165,7 +166,7 @@
 	"mmcdev="__stringify(CONFIG_SYS_MMC_ENV_DEV)"\0" \
 	"mmcpart=" __stringify(CONFIG_SYS_MMC_IMG_LOAD_PART) "\0" \
 	"mmcroot=" CONFIG_MMCROOT " rootwait rw\0" \
-	"mmcautodetect=yes\0" \
+	"mmcautodetect=no\0" \
 	"mmcargs=setenv bootargs ${jh_clk} console=${console} root=${mmcroot}\0 " \
 	"loadbootscript=ext4load mmc ${mmcdev}:${bootpart} ${loadaddr} ${bsp_script};\0" \
 	"bootscript=echo Running bootscript from mmc ...; " \
