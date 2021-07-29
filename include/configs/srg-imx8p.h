@@ -81,12 +81,21 @@
 #define CONFIG_NET_RANDOM_ETHADDR
 //#define CONFIG_RTL8211F_PHY_FORCE_EEE_RXC_ON
 #endif
+#define BOOTENV_DEV_LEGACY_MMC(devtypeu, devtypel, instance) \
+	"bootcmd_" #devtypel #instance "=" \
+	"setenv mmcdev " #instance"; " \
+	"run mmcboot\0"
+
+#define BOOTENV_DEV_NAME_LEGACY_MMC(devtypeu, devtypel, instance) \
+	#devtypel #instance " "
 
 #ifdef CONFIG_DISTRO_DEFAULTS
 #define BOOT_TARGET_DEVICES(func) \
 	func(USB, usb, 0) \
 	func(MMC, mmc, 1) \
+	func(LEGACY_MMC, legacy_mmc, 1) \
 	func(MMC, mmc, 2) \
+	func(LEGACY_MMC, legacy_mmc, 2) \
 
 
 #include <config_distro_bootcmd.h>
