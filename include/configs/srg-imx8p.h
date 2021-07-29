@@ -167,12 +167,12 @@
 	"mmcroot=" CONFIG_MMCROOT " rootwait rw\0" \
 	"mmcautodetect=yes\0" \
 	"mmcargs=setenv bootargs ${jh_clk} console=${console} root=${mmcroot}\0 " \
-	"loadbootscript=sqfsload mmc ${mmcdev}:${bootpart} ${loadaddr} ${bsp_script};\0" \
+	"loadbootscript=ext4load mmc ${mmcdev}:${bootpart} ${loadaddr} ${bsp_script};\0" \
 	"bootscript=echo Running bootscript from mmc ...; " \
 		"source\0" \
-	"loadimage=sqfsload mmc ${mmcdev}:${bootpart} ${loadaddr} ${image}\0" \
-	"loadfdt=sqfsload mmc ${mmcdev}:${bootpart} ${fdt_addr_r} ${fdtfile}\0" \
-	"loadinitrd=sqfsload mmc ${mmcdev}:${bootpart} ${initrd_addr_r} ${initrdfile}\0" \
+	"loadimage=ext4load mmc ${mmcdev}:${bootpart} ${loadaddr} ${image}\0" \
+	"loadfdt=ext4load mmc ${mmcdev}:${bootpart} ${fdt_addr_r} ${fdtfile}\0" \
+	"loadinitrd=ext4load mmc ${mmcdev}:${bootpart} ${initrd_addr_r} ${initrdfile}\0" \
 	"mmcboot=echo Booting from mmc ...; " \
 		"run mmcargs; " \
 		"if test ${boot_fit} = yes || test ${boot_fit} = try; then " \
