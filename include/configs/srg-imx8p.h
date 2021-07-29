@@ -84,7 +84,13 @@
 #define BOOTENV_DEV_LEGACY_MMC(devtypeu, devtypel, instance) \
 	"bootcmd_" #devtypel #instance "=" \
 	"setenv mmcdev " #instance"; " \
-	"run mmcboot\0"
+	"if run loadbootscript; then " \
+		"run bootscript; " \
+	"else " \
+		"if run loadimage; then " \
+			"run mmcboot; " \
+		"fi; " \
+	"fi;\0"
 
 #define BOOTENV_DEV_NAME_LEGACY_MMC(devtypeu, devtypel, instance) \
 	#devtypel #instance " "
