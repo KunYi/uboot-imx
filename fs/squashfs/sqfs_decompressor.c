@@ -46,7 +46,7 @@ int sqfs_decompressor_init(struct squashfs_ctxt *ctxt)
 		break;
 #endif
 	default:
-		printf("Error: unknown compression type.\n");
+		printf("[sqfs]Error: unknown compression type. comp_type:%d(0x%04x)\n", comp_type, comp_type);
 		return -EINVAL;
 	}
 
@@ -147,7 +147,7 @@ int sqfs_decompress(struct squashfs_ctxt *ctxt, void *dest,
 		break;
 #endif
 	default:
-		printf("Error: unknown compression type.\n");
+		printf("[sqfs]Error:unknown compression type. comp_type:%d(0x%04x)\n", comp_type, comp_type);
 		return -EINVAL;
 	}
 
