@@ -5,8 +5,8 @@
  * Copyright 2019 NXP
  */
 
-#ifndef __SRG_IMX8P_H
-#define __SRG_IMX8P_H
+#ifndef __SRG_IM8P_H
+#define __SRG_IM8P_H
 
 #include <linux/sizes.h>
 #include <asm/arch/imx-regs.h>
@@ -112,12 +112,12 @@
 
 #define JAILHOUSE_ENV \
 	"jh_clk= \0 " \
-	"jh_mmcboot=setenv fdt_file srg-imx8p-root.dtb;;" \
+	"jh_mmcboot=setenv fdt_file srg-im8p-root.dtb;;" \
 		"setenv jh_clk clk_ignore_unused; mem=2048MB;" \
 			   "if run loadimage; then " \
 				   "run mmcboot; " \
 			   "else run jh_netboot; fi; \0" \
-	"jh_netboot=setenv fdt_file srg-imx8p-root.dtb;; setenv jh_clk clk_ignore_unused; mem=2048MB; run netboot; \0 "
+	"jh_netboot=setenv fdt_file srg-im8p-root.dtb;; setenv jh_clk clk_ignore_unused; mem=2048MB; run netboot; \0 "
 
 #define CONFIG_MFG_ENV_SETTINGS \
 	CONFIG_MFG_ENV_SETTINGS_DEFAULT \

@@ -154,7 +154,7 @@ config TARGET_VERDIN_IMX8MM
        select SUPPORT_SPL
        select IMX8M_LPDDR4
 
-config TARGET_SRG_IMX8P
+config TARGET_SRG_IM8P
        bool "Support AAEON SRG-iMX8MPlus Gateway"
        select IMX8MP
        select SUPPORT_SPL
@@ -162,7 +162,7 @@ config TARGET_SRG_IMX8P
 
 endchoice
 
-source "board/aaeon/srg-imx8p/Kconfig"
+source "board/aaeon/srg-im8p/Kconfig"
 source "board/freescale/imx8mq_evk/Kconfig"
 source "board/freescale/imx8mq_val/Kconfig"
 source "board/freescale/imx8mm_ab2/Kconfig"

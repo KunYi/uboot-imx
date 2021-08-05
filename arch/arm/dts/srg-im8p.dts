@@ -9,8 +9,8 @@
 #include "imx8mp.dtsi"
 
 / {
-	model = "AAEON SRG-IMX8P IoT Gateway";
-	compatible = "aaeon,srg-imx8p", "fsl,imx8mp-evk", "fsl,imx8mp";
+	model = "AAEON SRG-IM8P IoT Gateway";
+	compatible = "aaeon,srg-im8p", "fsl,imx8mp-evk", "fsl,imx8mp";
 
 	chosen {
 		bootargs = "console=ttymxc1,115200 earlycon=ec_imx6q,0x30890000,115200";
