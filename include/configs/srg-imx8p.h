@@ -13,8 +13,8 @@
 
 #include "imx_env.h"
 
-#define CONFIG_SYS_MMC_ENV_DEV		1   /* USDHC2 for MicroSD(1), USDHC3 for EMMC(2) */
-#define CONFIG_MMCROOT			"/dev/mmcblk1p1"  /* USDHC2 */
+#define CONFIG_SYS_MMC_ENV_DEV		2   /* USDHC2 for MicroSD(1), USDHC3 for EMMC(2) */
+#define CONFIG_MMCROOT			"/dev/mmcblk2p1"  /* EMMC */
 
 #ifdef  CONFIG_SYS_BOOTM_LEN
 #undef  CONFIG_SYS_BOOTM_LEN
@@ -145,6 +145,7 @@
 	JAILHOUSE_ENV \
 	FALLBACK_BOOTCOUNT_ENV \
 	BOOTENV \
+	"env_on_emmc=y\0" \
 	"script=/boot/boot.scr\0" \
 	"kernel_addr_r=" __stringify(CONFIG_LOADADDR) "\0" \
 	"bsp_script=/boot/boot.scr\0" \
