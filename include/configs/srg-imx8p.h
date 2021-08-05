@@ -167,7 +167,8 @@
 	"mmcpart=" __stringify(CONFIG_SYS_MMC_IMG_LOAD_PART) "\0" \
 	"mmcroot=" CONFIG_MMCROOT " rootwait rw\0" \
 	"mmcautodetect=no\0" \
-	"mmcargs=setenv bootargs ${jh_clk} console=${console} root=${mmcroot}\0 " \
+	"mmcargs=setenv bootargs ${jh_clk} ${datawipe} ${bootopts} "\
+		"console=${console} root=${mmcroot}\0 " \
 	"loadbootscript=ext4load mmc ${mmcdev}:${bootpart} ${loadaddr} ${bsp_script};\0" \
 	"bootscript=echo Running bootscript from mmc ...; " \
 		"source\0" \
@@ -190,8 +191,8 @@
 				"echo WARN: Cannot load the DT; " \
 			"fi; " \
 		"fi;\0" \
-	"usbargs=setenv bootargs ${jh_clk} console=${console} " \
-		"root=/dev/sda\0" \
+	"usbargs=setenv bootargs ${jh_clk} ${datawipe} ${bootopts} console=${console} " \
+		"root=/dev/sda rootwait rw\0" \
 	"usbboot=echo Booting from USB ...; " \
 	"netargs=setenv bootargs ${jh_clk} console=${console} " \
 		"root=/dev/nfs " \
