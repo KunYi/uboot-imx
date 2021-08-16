@@ -92,6 +92,11 @@
 			gpio-reset = <&gpio1 15 GPIO_ACTIVE_LOW>;
 		};
 	};
+
+	watchdog: {
+		compatible = "fsl,imx21-wdt";
+		fsl,ext-reset-output;
+	};
 };
 
 &eqos {
