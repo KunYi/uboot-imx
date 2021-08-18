@@ -201,8 +201,20 @@ config TARGET_PHYCORE_IMX8MP
 	select IMX8MP
         select SUPPORT_SPL
 	select IMX8M_LPDDR4
+
+config TARGET_SRG_IM8P
+	bool "AAEON SRG-IM8P IoT Gateway"
+	select IMX8MP
+	select SUPPORT_SPL
+	select IMX8M_LPDDR4
+	select FSL_CAAM
+	select FSL_BLOB
+	select MISC
+	select SPL_CRYPTO_SUPPORT if SPL
+
 endchoice
 
+source "board/aaeon/srg-im8p/Kconfig"
 source "board/freescale/imx8mq_evk/Kconfig"
 source "board/freescale/imx8mq_val/Kconfig"
 source "board/freescale/imx8mm_evk/Kconfig"
