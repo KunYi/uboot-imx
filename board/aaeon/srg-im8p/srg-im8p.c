@@ -242,9 +242,9 @@ int board_init(void)
 	if (CONFIG_IS_ENABLED(DWC_ETH_QOS)) {
 		setup_eqos();
 	}
-#if defined(CONFIG_USB_DWC3) || defined(CONFIG_USB_XHCI_IMX8M)
+
 	init_usb_clk();
-#endif
+
 
 #ifdef CONFIG_TPM
 	setup_tpm();

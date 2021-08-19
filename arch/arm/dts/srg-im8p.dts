@@ -19,7 +19,7 @@
 
 	memory@40000000 {
 		device_type = "memory";
-		reg = <0x0 0x40000000 0 0xc0000000>;
+		reg = <0x0 0x40000000 0 0x80000000>;
 	};
 
 	reg_can1_stby: regulator-can1-stby {
@@ -122,6 +122,7 @@
 	status = "okay";
 };
 
+/*
 &eqos {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_eqos>;
@@ -141,6 +142,7 @@
 		};
 	};
 };
+*/
 
 &flexcan2 {
 	pinctrl-names = "default";
@@ -337,22 +339,8 @@
 	status = "disabled";
 };
 
-&i2c3 {
-	clock-frequency = <400000>;
-	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_i2c3>;
-	status = "okay";
-
-	pca6416: gpio@20 {
-		compatible = "ti,tca6416";
-		reg = <0x20>;
-		gpio-controller;
-		#gpio-cells = <2>;
-	};
-};
-
 &snvs_pwrkey {
-	status = "okay";
+	status = "disabled";
 };
 
 &uart2 {
