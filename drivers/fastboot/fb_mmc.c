@@ -532,7 +532,12 @@ void fastboot_mmc_flash_write(const char *cmd, void *download_buffer,
 #endif
 
 #if CONFIG_IS_ENABLED(EFI_PARTITION)
+#ifndef CONFIG_FASTBOOT_MMC_USER_SUPPORT
 	if (strcmp(cmd, CONFIG_FASTBOOT_GPT_NAME) == 0) {
+#else
+	if (strcmp(cmd, CONFIG_FASTBOOT_GPT_NAME) == 0 ||
+	    strcmp(cmd, CONFIG_FASTBOOT_MMC_USER_NAME) == 0) {
+#endif
 		dev_desc = fastboot_mmc_get_dev(response);
 		if (!dev_desc)
 			return;

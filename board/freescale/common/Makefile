@@ -15,7 +15,6 @@ ifdef MINIMAL
 # necessary to create built-in.o
 obj- := __dummy__.o
 else
-# include i2c_common.o once if either VID or FSL_USE_PCA9547_MUX
 I2C_COMMON=
 ifdef CONFIG_VID
 I2C_COMMON=y
@@ -31,7 +30,7 @@ obj-$(CONFIG_FSL_PIXIS)	+= pixis.o
 ifndef CONFIG_SPL_BUILD
 obj-$(CONFIG_FSL_NGPIXIS)	+= ngpixis.o
 endif
-obj-$(I2C_COMMON)		+= i2c_common.o
+
 obj-$(CONFIG_FSL_USE_PCA9547_MUX)		+= i2c_mux.o
 obj-$(CONFIG_VID)		+= vid.o
 obj-$(CONFIG_FSL_QIXIS)	+= qixis.o
@@ -67,10 +66,18 @@ obj-$(CONFIG_ZM7300)		+= zm7300.o
 obj-$(CONFIG_POWER_PFUZE100)	+= pfuze.o
 obj-$(CONFIG_DM_PMIC_PFUZE100)	+= pfuze.o
 obj-$(CONFIG_POWER_MC34VR500)	+= mc34vr500.o
+obj-$(CONFIG_MXC_EPDC)		+= epdc_setup.o
+ifneq (,$(filter $(SOC), mx25 mx31 mx35 mx5 mx6 mx7 mx7ulp imx8 imx8m vf610))
+obj-y				+= mmc.o
+endif
+ifdef CONFIG_FSL_FASTBOOT
+obj-${CONFIG_ANDROID_RECOVERY} += recovery_keypad.o
+endif
 
 obj-$(CONFIG_LS102XA_STREAM_ID)	+= ls102xa_stream_id.o
 
 obj-$(CONFIG_EMC2305)              += emc2305.o
+obj-$(CONFIG_QSFP_EEPROM)	+= qsfp_eeprom.o
 
 # deal with common files for P-series corenet based devices
 obj-$(CONFIG_TARGET_P2041RDB)	+= p_corenet/
@@ -85,5 +92,9 @@ ifdef CONFIG_NXP_ESBC
 obj-$(CONFIG_CMD_ESBC_VALIDATE) += fsl_validate.o cmd_esbc_validate.o
 endif
 obj-$(CONFIG_CHAIN_OF_TRUST) += fsl_chain_of_trust.o
+
+ifndef CONFIG_SPL_BUILD
+obj-$(CONFIG_USB_TCPC) += tcpc.o
+endif
 
 endif

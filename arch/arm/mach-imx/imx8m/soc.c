@@ -16,10 +16,14 @@
 #include <asm/arch/sys_proto.h>
 #include <asm/mach-imx/hab.h>
 #include <asm/mach-imx/boot_mode.h>
+#include <asm/mach-imx/optee.h>
 #include <asm/mach-imx/syscounter.h>
 #include <asm/ptrace.h>
 #include <asm/armv8/mmu.h>
 #include <dm/uclass.h>
+#include <dm/platdata.h>
+#include <dm/uclass-internal.h>
+#include <dm/device-internal.h>
 #include <efi_loader.h>
 #include <env.h>
 #include <env_internal.h>
@@ -29,6 +33,8 @@
 #include <imx_sip.h>
 #include <linux/arm-smccc.h>
 #include <linux/bitops.h>
+#include <asm/setup.h>
+#include <asm/bootm.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -646,6 +652,19 @@ int spl_mmc_emmc_boot_partition(struct mmc *mmc)
 }
 #endif
 
+#ifdef CONFIG_SERIAL_TAG
+void get_board_serial(struct tag_serialnr *serialnr)
+{
+	struct ocotp_regs *ocotp = (struct ocotp_regs *)OCOTP_BASE_ADDR;
+	struct fuse_bank *bank = &ocotp->bank[0];
+	struct fuse_bank0_regs *fuse =
+		(struct fuse_bank0_regs *)bank->fuse_regs;
+
+	serialnr->low = fuse->uid_low;
+	serialnr->high = fuse->uid_high;
+}
+#endif
+
 bool is_usb_boot(void)
 {
 	return get_boot_device() == USB_BOOT;
@@ -803,6 +822,14 @@ static int check_mipi_dsi_nodes(void *blob)
 	return disable_mipi_dsi_nodes(blob);
 }
 #endif
+
+void board_quiesce_devices(void)
+{
+#ifdef CONFIG_USB_DWC3
+	if (is_usb_boot())
+		disconnect_from_pc();
+#endif
+}
 
 int disable_vpu_nodes(void *blob)
 {
@@ -1017,6 +1044,37 @@ static int disable_cpu_nodes(void *blob, u32 disabled_cores)
 	return 0;
 }
 
+#if defined(CONFIG_IMX8MM)
+static int cleanup_nodes_for_efi(void *blob)
+{
+	static const char * const usbotg_path[] = {
+		"/soc@0/bus@32c00000/usb@32e40000",
+		"/soc@0/bus@32c00000/usb@32e50000"
+		};
+	int nodeoff, i, rc;
+
+	for (i = 0; i < ARRAY_SIZE(usbotg_path); i++) {
+		nodeoff = fdt_path_offset(blob, usbotg_path[i]);
+		if (nodeoff < 0)
+			continue; /* Not found, skip it */
+		debug("Found %s node\n", usbotg_path[i]);
+
+		rc = fdt_delprop(blob, nodeoff, "extcon");
+		if (rc == -FDT_ERR_NOTFOUND)
+			continue;
+		if (rc) {
+			printf("Unable to update property %s:%s, err=%s\n",
+			       usbotg_path[i], "extcon", fdt_strerror(rc));
+			return rc;
+		}
+
+		printf("Remove %s:%s\n", usbotg_path[i], "extcon");
+	}
+
+	return 0;
+}
+#endif
+
 int ft_system_setup(void *blob, struct bd_info *bd)
 {
 #ifdef CONFIG_IMX8MQ
@@ -1111,6 +1169,8 @@ usb_modify_speed:
 	else if (is_imx8mms() || is_imx8mmsl())
 		disable_cpu_nodes(blob, 3);
 
+	cleanup_nodes_for_efi(blob);
+
 #elif defined(CONFIG_IMX8MN)
 	if (is_imx8mnl() || is_imx8mndl() ||  is_imx8mnsl())
 		disable_gpu_nodes(blob);
@@ -1148,6 +1208,7 @@ usb_modify_speed:
 #endif
 
 	return 0;
+	return ft_add_optee_node(blob, bd);
 }
 #endif
 
@@ -1187,11 +1248,74 @@ static void acquire_buildinfo(void)
 
 int arch_misc_init(void)
 {
+	struct udevice *dev;
+
+	uclass_find_first_device(UCLASS_MISC, &dev);
+	for (; dev; uclass_find_next_device(&dev)) {
+		if (device_probe(dev))
+			continue;
+	}
 	acquire_buildinfo();
 
 	return 0;
 }
 #endif
+
+#ifdef CONFIG_SPL_BUILD
+static uint32_t gpc_pu_m_core_offset[11] = {
+	0xc00, 0xc40, 0xc80, 0xcc0,
+	0xdc0, 0xe00, 0xe40, 0xe80,
+	0xec0, 0xf00, 0xf40,
+};
+
+#define PGC_PCR				0
+
+void imx_gpc_set_m_core_pgc(unsigned int offset, bool pdn)
+{
+	uint32_t val;
+	uintptr_t reg = GPC_BASE_ADDR + offset;
+
+	val = readl(reg);
+	val &= ~(0x1 << PGC_PCR);
+
+	if(pdn)
+		val |= 0x1 << PGC_PCR;
+	writel(val, reg);
+}
+
+void imx8m_usb_power_domain(uint32_t domain_id, bool on)
+{
+	uint32_t val;
+	uintptr_t reg;
+
+	imx_gpc_set_m_core_pgc(gpc_pu_m_core_offset[domain_id], true);
+
+	reg = GPC_BASE_ADDR + (on ? 0xf8 : 0x104);
+	val = 1 << (domain_id > 3 ? (domain_id + 3) : domain_id);
+	writel(val, reg);
+	while (readl(reg) & val)
+		;
+	imx_gpc_set_m_core_pgc(gpc_pu_m_core_offset[domain_id], false);
+}
+#endif
+
+int imx8m_usb_power(int usb_id, bool on)
+{
+	if (usb_id > 1)
+		return -EINVAL;
+
+#ifdef CONFIG_SPL_BUILD
+	imx8m_usb_power_domain(2 + usb_id, on);
+#else
+	struct arm_smccc_res res;
+	arm_smccc_smc(IMX_SIP_GPC, IMX_SIP_GPC_PM_DOMAIN,
+			2 + usb_id, on, 0, 0, 0, 0, &res);
+	if (res.a0)
+		return -EPERM;
+#endif
+
+	return 0;
+}
 
 void imx_tmu_arch_init(void *reg_base)
 {
